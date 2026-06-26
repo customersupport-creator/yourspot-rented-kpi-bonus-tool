@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>YourSpot Rented - KPI Bonus Tracking Tool</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#1B2A4A;--navy-light:#243556;--navy-dark:#141f38;--gold:#D4A843;--gold-light:#e6c76a;--gold-dark:#b8912e;--text:#e8e8e8;--text-muted:#9aa5b4;--bg:#0f1929;--card:#1e2d4a;--card-hover:#253a5e;--border:#2a3f63;--success:#4caf50;--danger:#e74c3c;--warning:#ff9800;--info:#2196f3;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+#sidebar{width:250px;background:var(--navy-dark);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;transition:left .3s;}
+.sidebar-header{padding:20px;text-align:center;border-bottom:1px solid var(--border);}
+.sidebar-header h2{color:var(--gold);font-size:18px;}
+.sidebar-header p{color:var(--text-muted);font-size:12px;margin-top:4px;}
+.nav-item{padding:14px 20px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-muted);transition:all .2s;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--navy-light);color:var(--text);}
+.nav-item.active{background:var(--navy);color:var(--gold);border-left-color:var(--gold);}
+.nav-item i{width:20px;text-align:center;}
+#main{margin-left:250px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+#topbar{background:var(--navy);padding:15px 25px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+#topbar h1{font-size:20px;color:var(--gold);}
+.topbar-controls{display:flex;align-items:center;gap:15px;}
+#monthSelect{background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:14px;}
+.hamburger{display:none;background:none;border:none;color:var(--gold);font-size:24px;cursor:pointer;}
+#content{padding:25px;flex:1;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:25px;}
+.stat-card{background:var(--card);border-radius:10px;padding:20px;border:1px solid var(--border);transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card .label{color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;}
+.stat-card .value{font-size:28px;font-weight:700;color:var(--gold);margin:8px 0;}
+.stat-card .sub{font-size:12px;color:var(--text-muted);}
+.chart-container{background:var(--card);border-radius:10px;padding:20px;border:1px solid var(--border);margin-bottom:25px;}
+.chart-container h3{color:var(--gold);margin-bottom:15px;}
+.chart-wrap{position:relative;height:300px;}
+.form-section{background:var(--card);border-radius:10px;padding:20px;border:1px solid var(--border);margin-bottom:20px;}
+.form-section h3{color:var(--gold);margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.form-group{margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.form-group label{min-width:280px;font-size:14px;color:var(--text);}
+.form-group input,.form-group select{background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:14px;width:120px;}
+.form-group select{width:200px;}
+.form-group .impact{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.impact-HIGH{background:#e74c3c33;color:#e74c3c;}
+.impact-MED-HIGH{background:#ff980033;color:#ff9800;}
+.impact-MEDIUM{background:#2196f333;color:#2196f3;}
+.impact-LOW-MED{background:#4caf5033;color:#4caf50;}
+.form-group .kpi-value{color:var(--gold);font-weight:600;min-width:80px;}
+.btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-gold{background:var(--gold);color:var(--navy-dark);}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#c0392b;}
+.btn-info{background:var(--info);color:#fff;}
+.btn-info:hover{background:#1976d2;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+th{background:var(--navy-dark);color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+td{font-size:14px;}
+tr:hover{background:var(--navy-light);}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;}
+.badge-top{background:#4caf5033;color:#4caf50;}
+.badge-low{background:#e74c3c33;color:#e74c3c;}
+.badge-none{background:#66666633;color:#999;}
+.tabs{display:flex;gap:5px;margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 16px;border-radius:6px 6px 0 0;cursor:pointer;background:var(--navy-dark);color:var(--text-muted);border:1px solid var(--border);border-bottom:none;font-size:13px;transition:all .2s;}
+.tab.active{background:var(--card);color:var(--gold);font-weight:600;}
+.deduction-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--navy-dark);border-radius:6px;margin-bottom:8px;}
+.deduction-item .desc{flex:1;font-size:13px;}
+.deduction-item .amt{color:var(--danger);font-weight:600;}
+.summary-box{background:var(--navy-dark);border-radius:8px;padding:15px;margin-top:15px;border-left:3px solid var(--gold);}
+.summary-box h4{color:var(--gold);margin-bottom:8px;}
+.summary-box .row{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;}
+.summary-box .row .val{color:var(--gold);font-weight:600;}
+textarea{background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:10px;border-radius:6px;width:100%;min-height:80px;font-family:inherit;font-size:14px;resize:vertical;}
+.coaching-section{margin-bottom:15px;}
+.coaching-section label{display:block;color:var(--gold);margin-bottom:5px;font-weight:600;font-size:14px;}
+#toast{position:fixed;bottom:30px;right:30px;background:var(--success);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none;}
+#toast.show{opacity:1;}
+.override-group{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.override-group label{min-width:180px;font-size:13px;color:var(--text-muted);}
+.override-group input{width:100px;}
+.btn-row{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap;}
+@media(max-width:768px){
+#sidebar{left:-250px;}
+#sidebar.open{left:0;}
+#main{margin-left:0;}
+.hamburger{display:block;}
+.stats-grid{grid-template-columns:1fr 1fr;}
+}
+@media print{
+#sidebar,#topbar,.btn,.hamburger,#toast{display:none!important;}
+#main{margin-left:0;}
+body{background:#fff;color:#000;}
+.stat-card,.form-section,.chart-container,.card{background:#fff;border:1px solid #ccc;color:#000;}
+th{background:#eee;color:#000;}
+.coaching-print{page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+<div class="sidebar-header">
+<h2><i class="fas fa-parking"></i> YourSpot Rented</h2>
+<p>KPI Bonus Tracker</p>
+</div>
+<div class="nav-item active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</div>
+<div class="nav-item" data-page="ccteam"><i class="fas fa-headset"></i> CC Team KPI</div>
+<div class="nav-item" data-page="adminteam"><i class="fas fa-cogs"></i> Admin Team KPI</div>
+<div class="nav-item" data-page="individual"><i class="fas fa-user"></i> Individual KPI</div>
+<div class="nav-item" data-page="summary"><i class="fas fa-file-invoice-dollar"></i> Bonus Summary</div>
+<div class="nav-item" data-page="tracker"><i class="fas fa-chart-line"></i> Performance Tracker</div>
+<div class="nav-item" data-page="coaching"><i class="fas fa-chalkboard-teacher"></i> Coaching Card</div>
+<div class="nav-item" data-page="pip"><i class="fas fa-clipboard-check"></i> PIP Tracking</div>
+<div class="nav-item" data-page="schedule"><i class="fas fa-calendar-alt"></i> Coaching Schedule</div>
+</div>
+<div id="main">
+<div id="topbar">
+<div style="display:flex;align-items:center;gap:15px;">
+<button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+<h1 id="pageTitle">Dashboard</h1>
+</div>
+<div class="topbar-controls">
+<select id="monthSelect" onchange="changeMonth(this.value)"></select>
+</div>
+</div>
+<div id="content"></div>
+</div>
+<div id="toast"></div>
+<script>
+const CC_MEMBERS=['Gwen','Donita','Michael','Angel','Christine'];
+const ADMIN_MEMBERS=['Joan','Lovely','Jian'];
+const ALL_MEMBERS=[...CC_MEMBERS,'Hazel',...ADMIN_MEMBERS];
+const MONTHS=[
+{key:'2026-04',label:'April 2026'},{key:'2026-05',label:'May 2026'},{key:'2026-06',label:'June 2026'},
+{key:'2026-07',label:'July 2026'},{key:'2026-08',label:'August 2026'},{key:'2026-09',label:'September 2026'},
+{key:'2026-10',label:'October 2026'},{key:'2026-11',label:'November 2026'},{key:'2026-12',label:'December 2026'}
+];
+let currentMonth='2026-06';
+let data={};
+let currentPage='dashboard';
+let charts={};
+
+const CC_TEAM_KPIS_NEW=[
+{id:'tow',name:'Successful Tow of Illegal Parkers',impact:'HIGH',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
+{id:'parkpliant',name:'Parkpliant Successful Payments',impact:'HIGH',type:'per_unit',rate:10,unit:'successful payment'},
+{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'tier',tiers:[{min:95,max:100,val:30},{min:85,max:94,val:22.50},{min:70,max:84,val:15},{min:50,max:69,val:7.50},{min:0,max:49,val:0}],unit:'% effectiveness'},
+{id:'towincident',name:'Towing Incident Investigation',impact:'MED-HIGH',type:'per_unit',rate:10,unit:'completed investigation'},
+{id:'frt',name:'First Response Time (FRT)',impact:'MEDIUM',type:'tier_time',tiers:[{label:'<3 min',val:20},{label:'3-4 min',val:10},{label:'4-5 min',val:5},{label:'>5 min',val:0}],unit:'avg minutes'},
+{id:'listing_issue',name:'Customer Reported Listing Issue Resolution',impact:'MEDIUM',type:'per_unit',rate:3,unit:'resolved issue'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update Compliance',impact:'LOW-MED',type:'per_unit',rate:3,unit:'week completed'}
+];
+
+const CC_TEAM_KPIS_OLD=[
+{id:'tow',name:'Illegal Parker Towing Coordination',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
+{id:'listing_issue',name:'Listing Issue Resolution',type:'per_unit',rate:3,unit:'resolved issue'},
+{id:'avg_response_team',name:'Customer Average Response Time',type:'tier_time',tiers:[{label:'<3 min',val:20},{label:'3-4 min',val:10},{label:'4-5 min',val:5},{label:'>5 min',val:0}],unit:'avg minutes'},
+{id:'resolution_rate_team',name:'Issue Resolution Rate',type:'tier',tiers:[{min:90,max:100,val:20},{min:80,max:89,val:10},{min:0,max:79,val:0}],unit:'%'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',type:'per_unit',rate:3,unit:'week completed'},
+{id:'towincident',name:'Towing Incident Investigation',type:'per_unit',rate:10,unit:'completed investigation'}
+];
+
+const CC_TEAM_KPIS_MAY=[
+{id:'tow',name:'Illegal Parker Towing Coordination',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
+{id:'listing_issue',name:'Listing Issue Resolution',type:'per_unit',rate:3,unit:'resolved issue'},
+{id:'avg_response_team',name:'Customer Average Response Time',type:'tier_time',tiers:[{label:'<3 min',val:20},{label:'3-4 min',val:10},{label:'4-5 min',val:5},{label:'>5 min',val:0}],unit:'avg minutes'},
+{id:'resolution_rate_team',name:'Issue Resolution Rate',type:'tier',tiers:[{min:90,max:100,val:20},{min:80,max:89,val:10},{min:0,max:79,val:0}],unit:'%'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',type:'per_unit',rate:3,unit:'week completed'},
+{id:'towincident',name:'Towing Incident Investigation',type:'per_unit',rate:10,unit:'completed investigation'},
+{id:'parkpliant',name:'Parkpliant Successful Payments',type:'per_unit',rate:10,unit:'successful payment'}
+];
+
+function getCCTeamKPIs(month){
+if(month==='2026-04') return CC_TEAM_KPIS_OLD;
+if(month==='2026-05') return CC_TEAM_KPIS_MAY;
+return CC_TEAM_KPIS_NEW;
+}
+
+const ADMIN_TEAM_KPIS_NEW=[
+{id:'endorsements',name:'Department Endorsements',type:'tier',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
+{id:'new_listing',name:'New Listing Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
+{id:'revision',name:'Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
+{id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
+{id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
+{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'parkpliant_admin',name:'Parkpliant Payments',type:'per_unit',rate:10,unit:'payment'},
+{id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
+];
+
+const ADMIN_TEAM_KPIS_OLD=[
+{id:'endorsements',name:'Department Endorsements',type:'tier',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'inventory',name:'Platform Inventory Management',type:'tier',tiers:[{min:98,max:100,val:30},{min:95,max:97,val:15},{min:0,max:94,val:0}],unit:'% accuracy'},
+{id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
+{id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:80,max:84,val:10},{min:0,max:79,val:0}],unit:'%'},
+{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
+];
+
+const ADMIN_TEAM_KPIS_MAY=[
+{id:'endorsements',name:'Department Endorsements',type:'tier',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
+{id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
+{id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
+{id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
+{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'parkpliant_admin',name:'Parkpliant Payments',type:'per_unit',rate:10,unit:'payment'},
+{id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
+];
+
+function getAdminTeamKPIs(month){
+if(month==='2026-04') return ADMIN_TEAM_KPIS_OLD;
+if(month==='2026-05') return ADMIN_TEAM_KPIS_MAY;
+return ADMIN_TEAM_KPIS_NEW;
+}
+
+// Per-person Individual KPIs — each person has unique categories and max values
+const ANGEL_KPIS=[
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50}
+];
+
+const CHRISTINE_KPIS=[
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10}
+];
+
+const DONITA_KPIS=[
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10}
+];
+
+const GWEN_KPIS=[
+{id:'cc_report',name:'CC Team KPI Monthly Report',weight:10,max:5},
+{id:'coaching',name:'Coaching of CC Personnel',weight:15,max:7.50},
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:10,max:5},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:10,max:5},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:15,max:7.50}
+];
+
+const MICHAEL_KPIS=[
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50}
+];
+
+const HAZEL_KPIS=[
+{id:'h_resolution',name:'Resolution Effectiveness & Quality',weight:20,max:10},
+{id:'h_team_perf',name:'Team Performance & Accountability',weight:20,max:10},
+{id:'h_coaching_imp',name:'Coaching / Improvement Actions Taken',weight:30,max:15},
+{id:'h_process_imp',name:'Process Improvement Implementation',weight:30,max:15}
+];
+
+const JOAN_KPIS=[
+{id:'a_report',name:'Admin Team KPI Monthly Report',weight:10,max:5},
+{id:'a_coaching',name:'Coaching of Admin Personnel',weight:15,max:7.50},
+{id:'a_weekly',name:'Weekly Report',weight:10,max:5},
+{id:'a_inventory',name:'Platform Inventory Mgmt',weight:10,max:5},
+{id:'a_listing',name:'New Listing & Revision Mgmt',weight:15,max:7.50},
+{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5},
+{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10},
+{id:'a_tow_assign',name:'Towing Company Assignment',weight:10,max:5}
+];
+
+const ADMIN_INDIVIDUAL_KPIS=[
+{id:'a_daily_task',name:'Daily Task Monitoring',weight:10,max:5},
+{id:'a_inventory',name:'Platform Inventory Mgmt',weight:20,max:10},
+{id:'a_listing',name:'New Listing & Revision Mgmt',weight:20,max:10},
+{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5},
+{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10},
+{id:'a_tow_assign',name:'Towing Company Assignment',weight:20,max:10}
+];
+
+function getKPIsForPerson(p){
+if(p==='Hazel')return HAZEL_KPIS;
+if(p==='Joan')return JOAN_KPIS;
+if(p==='Angel')return ANGEL_KPIS;
+if(p==='Christine')return CHRISTINE_KPIS;
+if(p==='Donita')return DONITA_KPIS;
+if(p==='Gwen')return GWEN_KPIS;
+if(p==='Michael')return MICHAEL_KPIS;
+return ADMIN_INDIVIDUAL_KPIS;
+}
+
+function getKPIDisplayName(kpi,month){
+if(month<='2026-05'&&kpi.oldName)return kpi.oldName;
+return kpi.name;
+}
+
+function loadData(){try{data=JSON.parse(localStorage.getItem('ysrkpi_data'))||{};}catch(e){data={};}}
+function saveData(){localStorage.setItem('ysrkpi_data',JSON.stringify(data));}
+function getMonthData(m){
+if(!data[m])data[m]={cc_team:{},admin_team:{},individual:{},deductions:[],coaching:{},topPerformer:{cc:'',admin:''},lowPerformer:{cc:'',admin:''},ccTeamGrossOverride:null,ccTeamNetOverride:null,ccMemberCount:null,adminTeamTotalOverride:null,adminMemberCount:null};
+return data[m];
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function fmt(v){return'$'+parseFloat(v||0).toFixed(2);}
+
+function calcCCTeamKPI(kpi,val){
+if(val===''||val===null||val===undefined)return 0;
+val=parseFloat(val);
+if(isNaN(val))return 0;
+if(kpi.type==='per_unit')return val*kpi.rate;
+if(kpi.type==='tier'){for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
+if(kpi.type==='tier_time')return val;
+return 0;
+}
+
+function calcAdminTeamKPI(kpi,val){
+if(val===''||val===null||val===undefined)return 0;
+if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
+if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
+if(kpi.type==='select')return parseFloat(val)||0;
+return 0;
+}
+
+function getCCTeamTotal(m){
+const d=getMonthData(m);
+if(d.ccTeamGrossOverride!==null&&d.ccTeamGrossOverride!==undefined&&d.ccTeamGrossOverride!=='')return parseFloat(d.ccTeamGrossOverride);
+let total=0;
+getCCTeamKPIs(m).forEach(k=>{total+=calcCCTeamKPI(k,d.cc_team[k.id]);});
+return total;
+}
+
+function getCCTeamNet(m){
+const d=getMonthData(m);
+if(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined&&d.ccTeamNetOverride!=='')return parseFloat(d.ccTeamNetOverride);
+const gross=getCCTeamTotal(m);
+const dedCount=(d.deductions||[]).length;
+return gross*(1-dedCount*10/100);
+}
+
+function getAdminTeamTotal(m){
+const d=getMonthData(m);
+if(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined&&d.adminTeamTotalOverride!=='')return parseFloat(d.adminTeamTotalOverride);
+let total=0;
+getAdminTeamKPIs(m).forEach(k=>{total+=calcAdminTeamKPI(k,d.admin_team[k.id]);});
+return total;
+}
+
+function getIndividualTotal(m,person){
+const d=getMonthData(m);
+const pData=d.individual[person]||{};
+const kpis=getKPIsForPerson(person);
+let total=0;
+kpis.forEach(k=>{total+=parseFloat(pData[k.id])||0;});
+return total;
+}
+
+function getTeamForPerson(p){
+if(CC_MEMBERS.includes(p)||p==='Hazel')return'cc';
+return'admin';
+}
+
+function getLowPerfDeduction(m,person){
+if(m<'2026-06')return 0;
+let consecutive=0;
+const mIdx=MONTHS.findIndex(x=>x.key===m);
+for(let i=mIdx;i>=0;i--){
+if(MONTHS[i].key<'2026-06')break;
+const md=getMonthData(MONTHS[i].key);
+const team=getTeamForPerson(person);
+if((team==='cc'&&md.lowPerformer.cc===person)||(team==='admin'&&md.lowPerformer.admin===person)){consecutive++;}
+else break;
+}
+if(consecutive>=3)return 1;
+if(consecutive===2)return 0.5;
+if(consecutive===1)return 0.25;
+return 0;
+}
+
+function getFinalBonus(m,person){
+const d=getMonthData(m);
+const indTotal=getIndividualTotal(m,person);
+const team=getTeamForPerson(person);
+let teamShare=0;
+if(team==='cc'){
+const net=getCCTeamNet(m);
+const count=d.ccMemberCount||CC_MEMBERS.length+1;
+teamShare=net/count;
+}else{
+const total=getAdminTeamTotal(m);
+const count=d.adminMemberCount||ADMIN_MEMBERS.length;
+teamShare=total/count;
+}
+const lowDed=getLowPerfDeduction(m,person);
+let bonus=indTotal+teamShare*(1-lowDed);
+const isTop=(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person);
+if(isTop&&m>='2026-06')bonus+=25;
+return bonus;
+}
+
+function getConsecutiveLow(person,upToMonth){
+if(upToMonth<'2026-06')return 0;
+let count=0;
+const mIdx=MONTHS.findIndex(x=>x.key===upToMonth);
+for(let i=mIdx;i>=0;i--){
+if(MONTHS[i].key<'2026-06')break;
+const md=getMonthData(MONTHS[i].key);
+const team=getTeamForPerson(person);
+if((team==='cc'&&md.lowPerformer.cc===person)||(team==='admin'&&md.lowPerformer.admin===person))count++;
+else break;
+}
+return count;
+}
+
+function getSanction(consecutiveLow){
+if(consecutiveLow>=3)return'PIP (100% deduction)';
+if(consecutiveLow===2)return'50% team bonus deduction';
+if(consecutiveLow===1)return'25% team bonus deduction';
+return'None';
+}
+
+function navigate(page){
+currentPage=page;
+document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===page);});
+const titles={dashboard:'Dashboard',ccteam:'CC Team KPI',adminteam:'Admin Team KPI',individual:'Individual KPI',summary:'Bonus Summary',tracker:'Performance Tracker',coaching:'Coaching Card',pip:'PIP Tracking',schedule:'Coaching Schedule'};
+document.getElementById('pageTitle').textContent=titles[page]||'Dashboard';
+Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy();});
+charts={};
+const renderers={dashboard:renderDashboard,ccteam:renderCCTeam,adminteam:renderAdminTeam,individual:renderIndividual,summary:renderSummary,tracker:renderTracker,coaching:renderCoaching,pip:renderPIP,schedule:renderSchedule};
+(renderers[page]||renderDashboard)();
+}
+
+function changeMonth(m){currentMonth=m;navigate(currentPage);}
+
+function renderDashboard(){
+const d=getMonthData(currentMonth);
+const ccPool=getCCTeamNet(currentMonth);
+const adminPool=getAdminTeamTotal(currentMonth);
+let totalPayout=0;
+ALL_MEMBERS.forEach(p=>{totalPayout+=getFinalBonus(currentMonth,p);});
+const bonuses=ALL_MEMBERS.map(p=>({name:p,bonus:getFinalBonus(currentMonth,p)})).sort((a,b)=>b.bonus-a.bonus);
+const topP=bonuses[0];
+const lowP=bonuses[bonuses.length-1];
+let h='<div class="stats-grid">';
+h+='<div class="stat-card"><div class="label">CC Team Pool (Net)</div><div class="value">'+fmt(ccPool)+'</div><div class="sub">After deductions</div></div>';
+h+='<div class="stat-card"><div class="label">Admin Team Pool</div><div class="value">'+fmt(adminPool)+'</div><div class="sub">Total admin bonus</div></div>';
+h+='<div class="stat-card"><div class="label">Total Payout</div><div class="value">'+fmt(totalPayout)+'</div><div class="sub">All members combined</div></div>';
+h+='<div class="stat-card"><div class="label">Top Performer</div><div class="value" style="font-size:20px;">'+(topP?topP.name:'-')+'</div><div class="sub">'+(topP?fmt(topP.bonus):'')+'</div></div>';
+h+='<div class="stat-card"><div class="label">Needs Improvement</div><div class="value" style="font-size:20px;">'+(lowP?lowP.name:'-')+'</div><div class="sub">'+(lowP?fmt(lowP.bonus):'')+'</div></div>';
+h+='</div>';
+h+='<div class="chart-container"><h3>Individual Bonuses</h3><div class="chart-wrap"><canvas id="bonusChart"></canvas></div></div>';
+h+='<div class="chart-container"><h3>Team Bonus Trend</h3><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>';
+document.getElementById('content').innerHTML=h;
+const ctx1=document.getElementById('bonusChart').getContext('2d');
+charts.bonus=new Chart(ctx1,{type:'bar',data:{labels:bonuses.map(b=>b.name),datasets:[{label:'Bonus ($)',data:bonuses.map(b=>b.bonus),backgroundColor:'#D4A843',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#9aa5b4',callback:v=>'$'+v}},x:{ticks:{color:'#9aa5b4'}}}}});
+const mLabels=[],ccData=[],adminData=[];
+MONTHS.forEach(m=>{mLabels.push(m.label.split(' ')[0]);ccData.push(getCCTeamNet(m.key));adminData.push(getAdminTeamTotal(m.key));});
+const ctx2=document.getElementById('trendChart').getContext('2d');
+charts.trend=new Chart(ctx2,{type:'line',data:{labels:mLabels,datasets:[{label:'CC Team Net',data:ccData,borderColor:'#D4A843',backgroundColor:'#D4A84333',fill:true,tension:0.3},{label:'Admin Team',data:adminData,borderColor:'#2196f3',backgroundColor:'#2196f333',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:'#9aa5b4',callback:v=>'$'+v}},x:{ticks:{color:'#9aa5b4'}}},plugins:{legend:{labels:{color:'#e8e8e8'}}}}});
+}
+
+function renderCCTeam(){
+const d=getMonthData(currentMonth);
+const ccKpis=getCCTeamKPIs(currentMonth);
+let h='<div class="form-section"><h3><i class="fas fa-headset"></i> CC Team KPIs</h3>';
+ccKpis.forEach(kpi=>{
+const val=d.cc_team[kpi.id]!==undefined?d.cc_team[kpi.id]:'';
+const calc=calcCCTeamKPI(kpi,val);
+h+='<div class="form-group">';
+h+='<label>'+kpi.name+(kpi.impact?' <span class="impact impact-'+kpi.impact+'">'+kpi.impact+'</span>':'')+'</label>';
+if(kpi.type==='tier_time'){
+h+='<select onchange="updateCCTeam(\''+kpi.id+'\',this.value)">';
+kpi.tiers.forEach(t=>{h+='<option value="'+t.val+'"'+(parseFloat(val)===t.val?' selected':'')+'>'+t.label+' ($'+t.val+')</option>';});
+h+='</select>';
+}else{
+h+='<input type="number" value="'+val+'" placeholder="'+kpi.unit+'" onchange="updateCCTeam(\''+kpi.id+'\',this.value)">';
+}
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='</div>';
+});
+h+='</div>';
+h+='<div class="form-section"><h3><i class="fas fa-exclamation-triangle"></i> Deductions (Invalid Tows)</h3>';
+h+='<div id="deductionList">';
+(d.deductions||[]).forEach((ded,i)=>{
+h+='<div class="deduction-item"><span class="desc">'+ded.description+'</span><span class="amt">-'+fmt(ded.amount)+'</span><span>('+ded.person+')</span><button class="btn btn-danger btn-sm" onclick="removeDeduction('+i+')"><i class="fas fa-trash"></i></button></div>';
+});
+h+='</div>';
+h+='<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">';
+h+='<input id="dedDesc" placeholder="Description" style="flex:2;min-width:200px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+h+='<input id="dedAmt" type="number" placeholder="Amount" style="width:100px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+h+='<select id="dedPerson" style="width:140px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+CC_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+h+='</select>';
+h+='<button class="btn btn-gold btn-sm" onclick="addDeduction()"><i class="fas fa-plus"></i> Add</button>';
+h+='</div></div>';
+h+='<div class="form-section"><h3><i class="fas fa-sliders-h"></i> Overrides</h3>';
+h+='<div class="override-group"><label>Gross Override ($):</label><input type="number" value="'+(d.ccTeamGrossOverride!==null&&d.ccTeamGrossOverride!==undefined?d.ccTeamGrossOverride:'')+'" onchange="updateCCOverride(\'ccTeamGrossOverride\',this.value)"></div>';
+h+='<div class="override-group"><label>Net Override ($):</label><input type="number" value="'+(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined?d.ccTeamNetOverride:'')+'" onchange="updateCCOverride(\'ccTeamNetOverride\',this.value)"></div>';
+h+='<div class="override-group"><label>Member Count:</label><input type="number" value="'+(d.ccMemberCount!==null&&d.ccMemberCount!==undefined?d.ccMemberCount:'')+'" onchange="updateCCOverride(\'ccMemberCount\',this.value)"></div>';
+h+='</div>';
+const gross=getCCTeamTotal(currentMonth);
+const net=getCCTeamNet(currentMonth);
+const count=d.ccMemberCount||CC_MEMBERS.length+1;
+h+='<div class="summary-box"><h4>CC Team Bonus Summary</h4>';
+h+='<div class="row"><span>Gross Total</span><span class="val">'+fmt(gross)+'</span></div>';
+h+='<div class="row"><span>Deductions ('+((d.deductions||[]).length)+' x 10%)</span><span class="val" style="color:var(--danger);">-'+(((d.deductions||[]).length)*10)+'%</span></div>';
+h+='<div class="row"><span>Net Total</span><span class="val">'+fmt(net)+'</span></div>';
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(net/count)+'</span></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveCCTeam()"><i class="fas fa-save"></i> Save</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function updateCCTeam(id,val){const d=getMonthData(currentMonth);d.cc_team[id]=val;}
+function updateCCOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
+function addDeduction(){
+const desc=document.getElementById('dedDesc').value;
+const amt=parseFloat(document.getElementById('dedAmt').value);
+const person=document.getElementById('dedPerson').value;
+if(!desc||isNaN(amt))return toast('Please fill description and amount');
+const d=getMonthData(currentMonth);
+d.deductions.push({description:desc,amount:amt,person:person});
+saveData();renderCCTeam();toast('Deduction added');
+}
+function removeDeduction(i){const d=getMonthData(currentMonth);d.deductions.splice(i,1);saveData();renderCCTeam();toast('Deduction removed');}
+function saveCCTeam(){saveData();renderCCTeam();toast('CC Team KPI saved');}
+
+function renderAdminTeam(){
+const d=getMonthData(currentMonth);
+const adminKpis=getAdminTeamKPIs(currentMonth);
+let h='<div class="form-section"><h3><i class="fas fa-cogs"></i> Admin Team KPIs</h3>';
+adminKpis.forEach(kpi=>{
+const val=d.admin_team[kpi.id]!==undefined?d.admin_team[kpi.id]:'';
+const calc=calcAdminTeamKPI(kpi,val);
+h+='<div class="form-group">';
+h+='<label>'+kpi.name+'</label>';
+if(kpi.type==='select'){
+h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value)">';
+h+='<option value="">-- Select --</option>';
+kpi.options.forEach(o=>{h+='<option value="'+o.val+'"'+(parseFloat(val)===o.val?' selected':'')+'>'+o.label+' ($'+o.val+')</option>';});
+h+='</select>';
+}else{
+h+='<input type="number" value="'+val+'" placeholder="'+kpi.unit+'" onchange="updateAdminTeam(\''+kpi.id+'\',this.value)">';
+}
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='</div>';
+});
+h+='</div>';
+h+='<div class="form-section"><h3><i class="fas fa-sliders-h"></i> Overrides</h3>';
+h+='<div class="override-group"><label>Total Override ($):</label><input type="number" value="'+(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined?d.adminTeamTotalOverride:'')+'" onchange="updateAdminOverride(\'adminTeamTotalOverride\',this.value)"></div>';
+h+='<div class="override-group"><label>Member Count:</label><input type="number" value="'+(d.adminMemberCount!==null&&d.adminMemberCount!==undefined?d.adminMemberCount:'')+'" onchange="updateAdminOverride(\'adminMemberCount\',this.value)"></div>';
+h+='</div>';
+const total=getAdminTeamTotal(currentMonth);
+const count=d.adminMemberCount||ADMIN_MEMBERS.length;
+h+='<div class="summary-box"><h4>Admin Team Bonus Summary</h4>';
+h+='<div class="row"><span>Total</span><span class="val">'+fmt(total)+'</span></div>';
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(total/count)+'</span></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveAdminTeam()"><i class="fas fa-save"></i> Save</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team[id]=val;}
+function updateAdminOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
+function saveAdminTeam(){saveData();renderAdminTeam();toast('Admin Team KPI saved');}
+
+let currentIndPerson=null;
+function renderIndividual(){
+if(!currentIndPerson)currentIndPerson=ALL_MEMBERS[0];
+const d=getMonthData(currentMonth);
+let h='<div class="tabs">';
+ALL_MEMBERS.forEach(p=>{h+='<div class="tab'+(p===currentIndPerson?' active':'')+'" onclick="switchIndPerson(\''+p+'\')">'+p+'</div>';});
+h+='</div>';
+const kpis=getKPIsForPerson(currentIndPerson);
+const pData=d.individual[currentIndPerson]||{};
+h+='<div class="form-section"><h3><i class="fas fa-user"></i> '+currentIndPerson+' - Individual KPIs</h3>';
+let total=0;
+kpis.forEach(kpi=>{
+const val=parseFloat(pData[kpi.id])||0;
+const desc=pData[kpi.id+'_desc']||'';
+total+=val;
+const displayName=getKPIDisplayName(kpi,currentMonth);
+h+='<div class="form-group">';
+h+='<label>'+displayName+(kpi.weight?' <span style="color:var(--text-muted);font-size:11px;">('+kpi.weight+'%, max $'+kpi.max+')</span>':'<span style="color:var(--text-muted);font-size:11px;">(max $'+kpi.max+')</span>')+'</label>';
+h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="width:80px;">';
+h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:200px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+h+='</div>';
+});
+// Deductions section — each deduction = 25% of individual total
+const personDeds=(d.deductions||[]).filter(ded=>ded.person===currentIndPerson);
+const dedPct=personDeds.length*25;
+const dedAmt=total*(dedPct/100);
+h+='<div style="margin-top:15px;background:rgba(231,76,60,0.08);border-left:3px solid var(--danger);padding:12px 15px;border-radius:0 6px 6px 0;">';
+h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(each = 25% of individual total)</span></h4>';
+if(personDeds.length>0){
+h+='<table style="margin:0 0 10px;"><thead><tr><th>Description</th><th style="width:120px;">Deduction</th><th style="width:60px;"></th></tr></thead><tbody>';
+personDeds.forEach((ded,i)=>{
+const globalIdx=(d.deductions||[]).indexOf(ded);
+const perDed=total*0.25;
+h+='<tr><td style="font-size:13px;">'+((ded.description||'').replace(/</g,'&lt;'))+'</td><td style="color:var(--danger);font-weight:700;">25% = -'+fmt(perDed)+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeIndDed('+globalIdx+')"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</tbody></table>';
+h+='<div style="font-weight:700;color:var(--danger);margin-bottom:10px;">Total: -'+dedPct+'% = -'+fmt(dedAmt)+'</div>';
+}
+h+='<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">';
+h+='<div style="flex:1;min-width:200px;"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Description</label><input id="indDedDesc" placeholder="e.g. Invalid tow - Customer ID 800350593, reimbursed $178.87" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<button class="btn" style="background:var(--danger);color:#fff;padding:8px 15px;" onclick="addIndDeduction()"><i class="fas fa-plus"></i> Add Deduction</button>';
+h+='</div></div>';
+if(dedPct>0){
+h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4><div class="row"><span>Deduction ('+dedPct+'%)</span><span class="val" style="color:var(--danger);">-'+fmt(dedAmt)+'</span></div><div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">Net Individual Bonus</span><span class="val" style="font-weight:700;">'+fmt(total-dedAmt)+'</span></div></div>';
+}else{
+h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4></div>';
+}
+h+='</div>';
+h+='<div class="form-section"><h3>Top/Low Performer Assignment</h3>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Top Performer</label><select onchange="updatePerformer(\'topPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+[...CC_MEMBERS,'Hazel'].forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+[...CC_MEMBERS,'Hazel'].forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Top Performer</label><select onchange="updatePerformer(\'topPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+ADMIN_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+ADMIN_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div></div></div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveIndividual()"><i class="fas fa-save"></i> Save</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function switchIndPerson(p){currentIndPerson=p;renderIndividual();}
+function updateIndKPI(person,kpiId,val){const d=getMonthData(currentMonth);if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId]=val===''?'':parseFloat(val);}
+function updateIndDesc(person,kpiId,val){const d=getMonthData(currentMonth);if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId+'_desc']=val;}
+function updatePerformer(type,team,val){const d=getMonthData(currentMonth);d[type][team]=val;}
+function addIndDeduction(){
+const desc=document.getElementById('indDedDesc').value.trim();
+if(!desc){toast('Enter a description for the deduction');return;}
+const d=getMonthData(currentMonth);
+if(!d.deductions)d.deductions=[];
+d.deductions.push({description:desc,amount:0,person:currentIndPerson});
+saveData();renderIndividual();toast('Deduction added (25% of individual total)');
+}
+function removeIndDed(i){const d=getMonthData(currentMonth);d.deductions.splice(i,1);saveData();renderIndividual();toast('Deduction removed');}
+function saveIndividual(){saveData();renderIndividual();toast('Individual KPI saved');}
+
+function renderSummary(){
+const d=getMonthData(currentMonth);
+const ccNet=getCCTeamNet(currentMonth);
+const adminTotal=getAdminTeamTotal(currentMonth);
+const ccCount=d.ccMemberCount||CC_MEMBERS.length+1;
+const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length;
+let h='<div class="form-section"><h3><i class="fas fa-file-invoice-dollar"></i> Complete Bonus Summary - '+MONTHS.find(m=>m.key===currentMonth).label+'</h3>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">';
+h+='<div class="summary-box"><h4>CC Team Pool</h4><div class="row"><span>Gross</span><span class="val">'+fmt(getCCTeamTotal(currentMonth))+'</span></div><div class="row"><span>Net (after deductions)</span><span class="val">'+fmt(ccNet)+'</span></div><div class="row"><span>Per member ('+ccCount+')</span><span class="val">'+fmt(ccNet/ccCount)+'</span></div></div>';
+h+='<div class="summary-box"><h4>Admin Team Pool</h4><div class="row"><span>Total</span><span class="val">'+fmt(adminTotal)+'</span></div><div class="row"><span>Per member ('+adminCount+')</span><span class="val">'+fmt(adminTotal/adminCount)+'</span></div></div>';
+h+='</div>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual $</th><th>Team Share</th><th>Low Ded %</th><th>Top Bonus</th><th>Final Bonus</th></tr></thead><tbody>';
+let grandTotal=0;
+ALL_MEMBERS.forEach(p=>{
+const indTotal=getIndividualTotal(currentMonth,p);
+const team=getTeamForPerson(p);
+let teamShare=0;
+if(team==='cc'){teamShare=ccNet/ccCount;}else{teamShare=adminTotal/adminCount;}
+const lowDed=getLowPerfDeduction(currentMonth,p);
+const isTopRaw=(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
+const isTop=isTopRaw&&currentMonth>='2026-06';
+const topBonus=isTop?25:0;
+const final_=getFinalBonus(currentMonth,p);
+grandTotal+=final_;
+const isLow=(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
+h+='<td>'+p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td>'+(team==='cc'?'CC':'Admin')+'</td>';
+h+='<td>'+fmt(indTotal)+'</td>';
+h+='<td>'+fmt(teamShare)+'</td>';
+h+='<td>'+(lowDed*100)+'%</td>';
+h+='<td>'+fmt(topBonus)+'</td>';
+h+='<td style="font-weight:700;color:var(--gold);">'+fmt(final_)+'</td>';
+h+='</tr>';
+});
+h+='</tbody><tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="printSummary()"><i class="fas fa-print"></i> Print</button><button class="btn btn-info" onclick="exportSummary()"><i class="fas fa-download"></i> Export</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function printSummary(){window.print();}
+function exportSummary(){
+const d=getMonthData(currentMonth);
+const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
+let txt='YourSpot Rented - KPI Bonus Summary\n'+mLabel+'\n'+'='.repeat(50)+'\n\n';
+txt+='CC Team Pool: '+fmt(getCCTeamNet(currentMonth))+' (Net)\n';
+txt+='Admin Team Pool: '+fmt(getAdminTeamTotal(currentMonth))+'\n\n';
+txt+='Employee Bonuses:\n'+'-'.repeat(50)+'\n';
+ALL_MEMBERS.forEach(p=>{
+const final_=getFinalBonus(currentMonth,p);
+const team=getTeamForPerson(p);
+const isTop=((team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p))&&currentMonth>='2026-06';
+const isLow=(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+txt+=p.padEnd(15)+fmt(final_).padStart(10)+(isTop?' [TOP]':'')+(isLow?' [LOW]':'')+'\n';
+});
+const blob=new Blob([txt],{type:'text/plain'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='KPI_Bonus_'+currentMonth+'.txt';
+a.click();
+toast('Exported successfully');
+}
+
+function renderTracker(){
+let h='<div class="form-section"><h3><i class="fas fa-chart-line"></i> Performance Tracker - All Months</h3>';
+h+='<div style="overflow-x:auto;"><table><thead><tr><th>Employee</th>';
+MONTHS.forEach(m=>{h+='<th>'+m.label.split(' ')[0].substring(0,3)+'</th>';});
+h+='<th>Consec. Low</th><th>Sanction</th></tr></thead><tbody>';
+ALL_MEMBERS.forEach(p=>{
+h+='<tr><td>'+p+'</td>';
+const team=getTeamForPerson(p);
+MONTHS.forEach(m=>{
+const md=getMonthData(m.key);
+const isTopRaw=(team==='cc'&&md.topPerformer.cc===p)||(team==='admin'&&md.topPerformer.admin===p);
+const isTop=isTopRaw&&m.key>='2026-06';
+const isLow=(team==='cc'&&md.lowPerformer.cc===p)||(team==='admin'&&md.lowPerformer.admin===p);
+if(isTop)h+='<td><span class="badge badge-top">TOP</span></td>';
+else if(isLow)h+='<td><span class="badge badge-low">LOW</span></td>';
+else h+='<td><span class="badge badge-none">-</span></td>';
+});
+const consec=getConsecutiveLow(p,MONTHS[MONTHS.length-1].key);
+const sanction=getSanction(consec);
+h+='<td style="text-align:center;font-weight:700;'+(consec>0?'color:var(--danger);':'')+'">'+(consec||'-')+'</td>';
+h+='<td style="font-size:12px;'+(consec>0?'color:var(--danger);':'')+'">'+(consec>0?sanction:'None')+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+let coachingPerson=null;
+function renderCoaching(){
+if(!coachingPerson)coachingPerson=ALL_MEMBERS[0];
+const d=getMonthData(currentMonth);
+if(!d.coaching)d.coaching={};
+if(!d.coaching[coachingPerson])d.coaching[coachingPerson]={strengths:'',improvements:'',actionPlan:'',followUp:'',employeeComments:''};
+const c=d.coaching[coachingPerson];
+const kpis=getKPIsForPerson(coachingPerson);
+const pData=d.individual[coachingPerson]||{};
+let h='<div class="tabs">';
+ALL_MEMBERS.forEach(p=>{h+='<div class="tab'+(p===coachingPerson?' active':'')+'" onclick="switchCoachPerson(\''+p+'\')">'+p+'</div>';});
+h+='</div>';
+h+='<div class="form-section coaching-print"><h3><i class="fas fa-chalkboard-teacher"></i> Coaching Card - '+coachingPerson+' ('+MONTHS.find(m=>m.key===currentMonth).label+')</h3>';
+// Compute totals and categorize
+const team=getTeamForPerson(coachingPerson);
+const indivTotal=getIndividualTotal(currentMonth,coachingPerson);
+const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
+const overallPct=maxTotal>0?Math.round(indivTotal/maxTotal*100):0;
+const finalBonus=getFinalBonus(currentMonth,coachingPerson);
+let teamShare=0;
+if(team==='cc'){const net=getCCTeamNet(currentMonth);const cnt=d.ccMemberCount||CC_MEMBERS.length+1;teamShare=net/cnt;}
+else{const tot=getAdminTeamTotal(currentMonth);const cnt=d.adminMemberCount||ADMIN_MEMBERS.length;teamShare=tot/cnt;}
+const isTop=((team==='cc'&&d.topPerformer.cc===coachingPerson)||(team==='admin'&&d.topPerformer.admin===coachingPerson))&&currentMonth>='2026-06';
+const isLow=(team==='cc'&&d.lowPerformer.cc===coachingPerson)||(team==='admin'&&d.lowPerformer.admin===coachingPerson);
+const lowDed=getLowPerfDeduction(currentMonth,coachingPerson);
+const deductPct=Math.round(lowDed*100);
+const consecLow=getConsecutiveLow(coachingPerson,currentMonth);
+const sanction=getSanction(consecLow);
+const metKPIs=[];const belowKPIs=[];
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+if(actual>=kpi.max) metKPIs.push({...kpi,displayName:getKPIDisplayName(kpi,currentMonth)});
+else belowKPIs.push({kpi:{...kpi,displayName:getKPIDisplayName(kpi,currentMonth)},actual,gap:kpi.max-actual});
+});
+h+='<div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">';
+h+='<div class="stat-card" style="flex:1;min-width:150px;"><div class="stat-label">Individual KPI Total</div><div class="stat-value">'+fmt(indivTotal)+' / '+fmt(maxTotal)+'</div><div class="stat-sub">'+overallPct+'% achievement</div></div>';
+h+='<div class="stat-card'+(isTop?' green':isLow?' red':'')+'" style="flex:1;min-width:150px;"><div class="stat-label">Performance Status</div><div class="stat-value" style="font-size:1.1rem;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--navy)')+';">'+(isTop?'TOP PERFORMER':isLow?'LOW PERFORMER':'Standard')+'</div><div class="stat-sub">Final Bonus: '+fmt(finalBonus)+'</div></div>';
+h+='<div class="stat-card" style="flex:1;min-width:150px;"><div class="stat-label">Team Share</div><div class="stat-value">'+fmt(teamShare)+'</div><div class="stat-sub">'+(team==='cc'?'Customer Care':'Admin')+' Team'+(deductPct>0?' (-'+deductPct+'% deduction)':'')+'</div></div>';
+h+='<div class="stat-card'+(consecLow>=3?' red':consecLow>=1?' red':'')+'" style="flex:1;min-width:150px;"><div class="stat-label">Sanction Status</div><div class="stat-value" style="font-size:0.95rem;color:'+(consecLow>=3?'var(--danger)':consecLow>=1?'var(--warning)':'var(--success)')+';">'+sanction+'</div><div class="stat-sub">'+consecLow+' consecutive low month'+(consecLow!==1?'s':'')+'</div></div>';
+h+='</div>';
+h+='<h4 style="color:var(--gold);margin:15px 0 10px;">KPI Gap Analysis</h4>';
+h+='<table><thead><tr><th>KPI</th><th>Max</th><th>Actual</th><th>Gap</th><th>%</th><th>Attainment Notes</th></tr></thead><tbody>';
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+const gap=kpi.max-actual;
+const pct=kpi.max>0?Math.round(actual/kpi.max*100):0;
+const desc=(pData[kpi.id+'_desc']||'').replace(/</g,'&lt;');
+const displayName=getKPIDisplayName(kpi,currentMonth);
+const statusIcon=actual>=kpi.max?'<i class="fas fa-check-circle" style="color:var(--success);"></i>':actual>0?'<i class="fas fa-exclamation-circle" style="color:var(--warning);"></i>':'<i class="fas fa-times-circle" style="color:var(--danger);"></i>';
+h+='<tr><td>'+statusIcon+' '+displayName+'</td><td>'+fmt(kpi.max)+'</td><td>'+fmt(actual)+'</td><td style="color:'+(gap>0?'var(--danger)':'var(--success)')+';">'+(gap>0?'-':'')+fmt(Math.abs(gap))+'</td><td style="font-weight:700;color:'+(pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)')+';">'+pct+'%</td><td style="font-size:12px;color:var(--text-muted);">'+desc+'</td></tr>';
+});
+const totalPct=maxTotal>0?Math.round(indivTotal/maxTotal*100):0;
+h+='<tr style="background:var(--navy);color:#fff;font-weight:700;"><td>TOTAL</td><td>'+fmt(maxTotal)+'</td><td>'+fmt(indivTotal)+'</td><td>'+(indivTotal<maxTotal?'-':'')+fmt(Math.abs(maxTotal-indivTotal))+'</td><td>'+totalPct+'%</td><td></td></tr>';
+h+='</tbody></table>';
+// Auto-generated insights
+const autoStrengths=metKPIs.length>0?metKPIs.map(k=>k.displayName).join(', '):'No KPIs at maximum this period';
+const autoImprovements=belowKPIs.length>0?belowKPIs.sort((a,b)=>b.gap-a.gap).map(b=>b.kpi.displayName+' (gap: '+fmt(b.gap)+')').join(', '):'All KPIs met or exceeded';
+h+='<div style="background:rgba(212,168,67,0.08);border-left:3px solid var(--gold);padding:12px 15px;margin:15px 0;border-radius:0 6px 6px 0;font-size:13px;">';
+h+='<strong style="color:var(--gold);"><i class="fas fa-lightbulb"></i> Auto-Generated Insights</strong><br>';
+h+='<span style="color:var(--success);font-weight:600;">Strengths:</span> '+autoStrengths+'<br>';
+h+='<span style="color:var(--danger);font-weight:600;">Focus Areas:</span> '+autoImprovements;
+h+='</div>';
+h+='<div class="coaching-section" style="margin-top:20px;"><label>Strengths (Editable)</label><textarea onchange="updateCoaching(\'strengths\',this.value)">'+((c.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Areas for Improvement (Editable)</label><textarea onchange="updateCoaching(\'improvements\',this.value)">'+((c.improvements||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Action Plan</label><textarea onchange="updateCoaching(\'actionPlan\',this.value)">'+((c.actionPlan||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Follow-Up Date / Notes</label><textarea onchange="updateCoaching(\'followUp\',this.value)">'+((c.followUp||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Employee Comments</label><textarea onchange="updateCoaching(\'employeeComments\',this.value)">'+((c.employeeComments||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveCoaching()"><i class="fas fa-save"></i> Save</button><button class="btn btn-info" onclick="window.print()"><i class="fas fa-print"></i> Print</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function switchCoachPerson(p){coachingPerson=p;renderCoaching();}
+function updateCoaching(field,val){
+const d=getMonthData(currentMonth);
+if(!d.coaching)d.coaching={};
+if(!d.coaching[coachingPerson])d.coaching[coachingPerson]={strengths:'',improvements:'',actionPlan:'',followUp:'',employeeComments:''};
+d.coaching[coachingPerson][field]=val;
+}
+function saveCoaching(){saveData();toast('Coaching card saved');}
+
+// ===== PIP TRACKING =====
+function getPIPData(){if(!data._pip)data._pip=[];return data._pip;}
+
+function getAutoFlags(){
+const flags=[];
+ALL_MEMBERS.forEach(p=>{
+const consec=getConsecutiveLow(p,currentMonth);
+if(consec>=3){
+const existing=getPIPData().find(pip=>pip.person===p&&pip.status!=='Completed'&&pip.status!=='Removed');
+if(!existing)flags.push({person:p,consecutiveLow:consec,team:getTeamForPerson(p)});
+}
+});
+return flags;
+}
+
+function enrollPIP(person,reason,startDate,endDate){
+const pips=getPIPData();
+pips.push({id:Date.now(),person:person,reason:reason,startDate:startDate||currentMonth,endDate:endDate||'',status:'Active',goals:[],progressNotes:[],enrolledMonth:currentMonth,auto:false});
+data._pip=pips;saveData();renderPIP();toast(person+' enrolled in PIP');
+}
+
+function autoEnrollPIP(person){
+const pips=getPIPData();
+const consec=getConsecutiveLow(person,currentMonth);
+pips.push({id:Date.now(),person:person,reason:'Auto-triggered: '+consec+' consecutive low performer months',startDate:currentMonth,endDate:'',status:'Active',goals:[],progressNotes:[],enrolledMonth:currentMonth,auto:true});
+data._pip=pips;saveData();renderPIP();toast(person+' auto-enrolled in PIP');
+}
+
+function updatePIPStatus(id,status){
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.status=status;if(status==='Completed'||status==='Removed')pip.closedMonth=currentMonth;saveData();renderPIP();toast('PIP status updated');}
+}
+
+function addPIPGoal(id){
+const desc=document.getElementById('pipGoal_'+id).value.trim();
+const target=document.getElementById('pipTarget_'+id).value.trim();
+if(!desc){toast('Enter a goal description');return;}
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.goals.push({description:desc,target:target,met:false});saveData();renderPIP();toast('Goal added');}
+}
+
+function toggleGoal(pipId,goalIdx){
+const pip=getPIPData().find(p=>p.id===pipId);
+if(pip&&pip.goals[goalIdx]){pip.goals[goalIdx].met=!pip.goals[goalIdx].met;saveData();renderPIP();}
+}
+
+function removePIPGoal(pipId,goalIdx){
+const pip=getPIPData().find(p=>p.id===pipId);
+if(pip){pip.goals.splice(goalIdx,1);saveData();renderPIP();toast('Goal removed');}
+}
+
+function addPIPNote(id){
+const note=document.getElementById('pipNote_'+id).value.trim();
+if(!note){toast('Enter a note');return;}
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.progressNotes.push({date:new Date().toLocaleDateString(),month:currentMonth,note:note});saveData();renderPIP();toast('Note added');}
+}
+
+function updatePIPField(id,field,val){
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip[field]=val;saveData();}
+}
+
+function removePIP(id){
+const pips=getPIPData();
+const idx=pips.findIndex(p=>p.id===id);
+if(idx>=0){pips.splice(idx,1);data._pip=pips;saveData();renderPIP();toast('PIP record removed');}
+}
+
+function renderPIP(){
+const pips=getPIPData();
+const autoFlags=getAutoFlags();
+const activePIPs=pips.filter(p=>p.status==='Active');
+const completedPIPs=pips.filter(p=>p.status==='Completed'||p.status==='Removed');
+let h='';
+
+// Auto-detection alerts
+if(autoFlags.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--danger);">';
+h+='<h3 style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Auto-Detected PIP Candidates</h3>';
+h+='<p style="color:var(--text-muted);font-size:13px;margin-bottom:15px;">These employees have 3+ consecutive low performer months starting June 2026 and are not currently enrolled in PIP.</p>';
+autoFlags.forEach(f=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;margin-bottom:8px;">';
+h+='<div style="flex:1;"><strong style="color:var(--text);">'+f.person+'</strong> <span style="color:var(--text-muted);font-size:12px;">('+( f.team==='cc'?'Customer Care':'Admin')+')</span>';
+h+='<div style="color:var(--danger);font-size:13px;margin-top:2px;">'+f.consecutiveLow+' consecutive low performer months</div></div>';
+h+='<button class="btn btn-danger btn-sm" onclick="autoEnrollPIP(\''+f.person+'\')"><i class="fas fa-user-plus"></i> Enroll in PIP</button>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Stats
+h+='<div class="stats-grid">';
+h+='<div class="stat-card"><div class="label">Active PIPs</div><div class="value" style="color:var(--danger);">'+activePIPs.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Completed/Removed</div><div class="value" style="color:var(--success);">'+completedPIPs.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Auto-Flagged</div><div class="value" style="color:var(--warning);">'+autoFlags.length+'</div></div>';
+h+='</div>';
+
+// Manual enrollment form
+h+='<div class="form-section"><h3><i class="fas fa-user-plus"></i> Manual PIP Enrollment</h3>';
+h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Employee</label>';
+h+='<select id="pipPerson" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;width:150px;">';
+ALL_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+h+='</select></div>';
+h+='<div style="flex:1;min-width:200px;"><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Reason</label>';
+h+='<input id="pipReason" placeholder="Reason for PIP enrollment" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Start Month</label>';
+h+='<select id="pipStart" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;">';
+MONTHS.forEach(m=>{h+='<option value="'+m.key+'"'+(m.key===currentMonth?' selected':'')+'>'+m.label+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">End Month</label>';
+h+='<select id="pipEnd" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"><option value="">TBD</option>';
+MONTHS.forEach(m=>{h+='<option value="'+m.key+'">'+m.label+'</option>';});
+h+='</select></div>';
+h+='<button class="btn btn-danger" onclick="enrollPIP(document.getElementById(\'pipPerson\').value,document.getElementById(\'pipReason\').value,document.getElementById(\'pipStart\').value,document.getElementById(\'pipEnd\').value)"><i class="fas fa-user-plus"></i> Enroll</button>';
+h+='</div></div>';
+
+// Active PIPs
+if(activePIPs.length>0){
+h+='<div class="form-section"><h3 style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Active PIPs ('+activePIPs.length+')</h3>';
+activePIPs.forEach(pip=>{
+const goalsMet=pip.goals.filter(g=>g.met).length;
+const goalsTotal=pip.goals.length;
+const pct=goalsTotal>0?Math.round(goalsMet/goalsTotal*100):0;
+h+='<div style="background:var(--navy-dark);border-radius:10px;padding:20px;margin-bottom:15px;border-left:4px solid var(--danger);">';
+// Header
+h+='<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;margin-bottom:15px;">';
+h+='<div><h4 style="color:var(--text);margin:0;">'+pip.person+'</h4>';
+h+='<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">'+pip.reason+'</div>';
+h+='<div style="font-size:12px;margin-top:5px;"><span style="color:var(--gold);">Start:</span> '+(MONTHS.find(m=>m.key===pip.startDate)||{label:pip.startDate}).label+' &nbsp; <span style="color:var(--gold);">End:</span> '+(pip.endDate?(MONTHS.find(m=>m.key===pip.endDate)||{label:pip.endDate}).label:'TBD');
+if(pip.auto)h+=' &nbsp; <span style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;">AUTO</span>';
+h+='</div></div>';
+h+='<div style="display:flex;gap:8px;">';
+h+='<select onchange="updatePIPStatus('+pip.id+',this.value)" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;">';
+['Active','Completed','Removed'].forEach(s=>{h+='<option value="'+s+'"'+(pip.status===s?' selected':'')+'>'+s+'</option>';});
+h+='</select>';
+h+='<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Remove this PIP record entirely?\'))removePIP('+pip.id+')"><i class="fas fa-trash"></i></button>';
+h+='</div></div>';
+// Progress bar
+if(goalsTotal>0){
+h+='<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;"><span>Goal Progress</span><span>'+goalsMet+'/'+goalsTotal+' ('+pct+'%)</span></div>';
+h+='<div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;"><div style="background:'+(pct>=100?'var(--success)':pct>=50?'var(--warning)':'var(--danger)')+';height:100%;width:'+pct+'%;border-radius:4px;transition:width .3s;"></div></div></div>';
+}
+// Goals
+h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-bullseye"></i> Improvement Goals</strong>';
+if(pip.goals.length>0){
+h+='<table style="margin-top:8px;"><thead><tr><th style="width:30px;"></th><th>Goal</th><th>Target</th><th style="width:60px;">Status</th><th style="width:40px;"></th></tr></thead><tbody>';
+pip.goals.forEach((g,gi)=>{
+h+='<tr style="'+(g.met?'opacity:0.6;':'')+'"><td><input type="checkbox" '+(g.met?'checked':'')+' onchange="toggleGoal('+pip.id+','+gi+')" style="cursor:pointer;"></td>';
+h+='<td style="'+(g.met?'text-decoration:line-through;':'')+'">'+g.description.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;color:var(--text-muted);">'+g.target.replace(/</g,'&lt;')+'</td>';
+h+='<td><span class="badge '+(g.met?'badge-top':'badge-low')+'">'+(g.met?'MET':'PENDING')+'</span></td>';
+h+='<td><button class="btn" style="padding:2px 6px;font-size:10px;background:var(--danger);color:#fff;" onclick="removePIPGoal('+pip.id+','+gi+')"><i class="fas fa-times"></i></button></td></tr>';
+});
+h+='</tbody></table>';
+}
+h+='<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">';
+h+='<input id="pipGoal_'+pip.id+'" placeholder="Goal description" style="flex:2;min-width:180px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<input id="pipTarget_'+pip.id+'" placeholder="Target/metric" style="flex:1;min-width:120px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="addPIPGoal('+pip.id+')"><i class="fas fa-plus"></i> Add Goal</button>';
+h+='</div></div>';
+// Progress Notes
+h+='<div><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-sticky-note"></i> Progress Notes</strong>';
+if(pip.progressNotes.length>0){
+pip.progressNotes.forEach(n=>{
+h+='<div style="padding:8px 12px;background:var(--navy);border-radius:6px;margin-top:6px;font-size:13px;"><span style="color:var(--gold);font-weight:600;">'+n.date+'</span> <span style="color:var(--text-muted);font-size:11px;">('+((MONTHS.find(m=>m.key===n.month)||{label:n.month}).label)+')</span><div style="margin-top:4px;">'+n.note.replace(/</g,'&lt;')+'</div></div>';
+});
+}
+h+='<div style="display:flex;gap:8px;margin-top:8px;">';
+h+='<input id="pipNote_'+pip.id+'" placeholder="Add progress note..." style="flex:1;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<button class="btn btn-info btn-sm" onclick="addPIPNote('+pip.id+')"><i class="fas fa-plus"></i> Add Note</button>';
+h+='</div></div>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Completed/Removed PIPs
+if(completedPIPs.length>0){
+h+='<div class="form-section"><h3 style="color:var(--success);"><i class="fas fa-check-circle"></i> Completed / Removed PIPs ('+completedPIPs.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Reason</th><th>Period</th><th>Goals Met</th><th>Status</th><th></th></tr></thead><tbody>';
+completedPIPs.forEach(pip=>{
+const goalsMet=pip.goals.filter(g=>g.met).length;
+const goalsTotal=pip.goals.length;
+h+='<tr>';
+h+='<td>'+pip.person+'</td>';
+h+='<td style="font-size:12px;">'+pip.reason.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;">'+(MONTHS.find(m=>m.key===pip.startDate)||{label:pip.startDate}).label+' - '+(pip.closedMonth?(MONTHS.find(m=>m.key===pip.closedMonth)||{label:pip.closedMonth}).label:'')+'</td>';
+h+='<td>'+goalsMet+'/'+goalsTotal+'</td>';
+h+='<td><span class="badge '+(pip.status==='Completed'?'badge-top':'badge-low')+'">'+pip.status.toUpperCase()+'</span></td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete this record?\'))removePIP('+pip.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+if(pips.length===0&&autoFlags.length===0){
+h+='<div class="form-section" style="text-align:center;padding:40px;"><i class="fas fa-check-circle" style="font-size:48px;color:var(--success);margin-bottom:15px;display:block;"></i>';
+h+='<h3 style="color:var(--success);">No Active PIPs</h3>';
+h+='<p style="color:var(--text-muted);">No employees are currently on a Performance Improvement Plan and no auto-flags detected.</p></div>';
+}
+
+document.getElementById('content').innerHTML=h;
+}
+
+// ===== COACHING SCHEDULE =====
+function getScheduleData(){if(!data._coachingSched)data._coachingSched=[];return data._coachingSched;}
+
+function addSession(){
+const emp=document.getElementById('schedEmp').value;
+const date=document.getElementById('schedDate').value;
+const topic=document.getElementById('schedTopic').value.trim();
+const followUp=document.getElementById('schedFollowUp').value;
+if(!date||!topic){toast('Date and topic are required');return;}
+const sched=getScheduleData();
+sched.push({id:Date.now(),employee:emp,date:date,topic:topic,notes:'',followUpDate:followUp,status:'Scheduled',createdMonth:currentMonth});
+data._coachingSched=sched;saveData();renderSchedule();toast('Session scheduled for '+emp);
+}
+
+function updateSessionStatus(id,status){
+const s=getScheduleData().find(x=>x.id===id);
+if(s){s.status=status;saveData();renderSchedule();}
+}
+
+function saveSessionNotes(id){
+const s=getScheduleData().find(x=>x.id===id);
+const notes=document.getElementById('schedNotes_'+id).value;
+if(s){s.notes=notes;saveData();toast('Notes saved');}
+}
+
+function updateSessionField(id,field,val){
+const s=getScheduleData().find(x=>x.id===id);
+if(s){s[field]=val;saveData();}
+}
+
+function deleteSession(id){
+const sched=getScheduleData();
+const idx=sched.findIndex(x=>x.id===id);
+if(idx>=0){sched.splice(idx,1);data._coachingSched=sched;saveData();renderSchedule();toast('Session removed');}
+}
+
+function formatSchedDate(d){
+if(!d)return'-';
+const dt=new Date(d+'T00:00:00');
+return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',weekday:'short'});
+}
+
+function renderSchedule(){
+const sched=getScheduleData();
+const today=new Date().toISOString().slice(0,10);
+const upcoming=sched.filter(s=>s.status==='Scheduled'&&s.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
+const overdue=sched.filter(s=>s.status==='Scheduled'&&s.date<today).sort((a,b)=>a.date.localeCompare(b.date));
+const completed=sched.filter(s=>s.status==='Completed').sort((a,b)=>b.date.localeCompare(a.date));
+const cancelled=sched.filter(s=>s.status==='Cancelled').sort((a,b)=>b.date.localeCompare(a.date));
+const followUps=sched.filter(s=>s.status==='Completed'&&s.followUpDate&&s.followUpDate>=today).sort((a,b)=>a.followUpDate.localeCompare(b.followUpDate));
+let h='';
+
+// Stats
+h+='<div class="stats-grid">';
+h+='<div class="stat-card"><div class="label">Upcoming</div><div class="value" style="color:var(--gold);">'+upcoming.length+'</div></div>';
+h+='<div class="stat-card'+(overdue.length>0?' red':'')+'"><div class="label">Overdue</div><div class="value" style="color:'+(overdue.length>0?'var(--danger)':'var(--success)')+';">'+overdue.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Completed</div><div class="value" style="color:var(--success);">'+completed.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Follow-Ups Due</div><div class="value" style="color:var(--warning);">'+followUps.length+'</div></div>';
+h+='</div>';
+
+// Add new session form
+h+='<div class="form-section"><h3><i class="fas fa-plus-circle"></i> Schedule Coaching Session</h3>';
+h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Employee</label>';
+h+='<select id="schedEmp" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;width:150px;">';
+ALL_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Date</label>';
+h+='<input type="date" id="schedDate" value="'+today+'" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"></div>';
+h+='<div style="flex:1;min-width:180px;"><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Topic</label>';
+h+='<input id="schedTopic" placeholder="Coaching topic / agenda" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Follow-Up Date</label>';
+h+='<input type="date" id="schedFollowUp" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"></div>';
+h+='<button class="btn btn-gold" onclick="addSession()"><i class="fas fa-calendar-plus"></i> Schedule</button>';
+h+='</div></div>';
+
+// Overdue alert
+if(overdue.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--danger);">';
+h+='<h3 style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Overdue Sessions ('+overdue.length+')</h3>';
+overdue.forEach(s=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;margin-bottom:8px;flex-wrap:wrap;">';
+h+='<div style="min-width:90px;"><strong style="color:var(--text);">'+s.employee+'</strong></div>';
+h+='<div style="color:var(--danger);font-size:13px;min-width:140px;"><i class="fas fa-calendar-times"></i> '+formatSchedDate(s.date)+'</div>';
+h+='<div style="flex:1;color:var(--text-muted);font-size:13px;">'+s.topic.replace(/</g,'&lt;')+'</div>';
+h+='<div style="display:flex;gap:6px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="updateSessionStatus('+s.id+',\'Completed\')"><i class="fas fa-check"></i> Done</button>';
+h+='<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="updateSessionStatus('+s.id+',\'Cancelled\')"><i class="fas fa-times"></i></button>';
+h+='</div></div>';
+});
+h+='</div>';
+}
+
+// Follow-ups due
+if(followUps.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--warning);">';
+h+='<h3 style="color:var(--warning);"><i class="fas fa-bell"></i> Follow-Ups Due ('+followUps.length+')</h3>';
+followUps.forEach(s=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:10px;background:rgba(243,156,18,0.08);border-radius:8px;margin-bottom:6px;">';
+h+='<div style="min-width:90px;"><strong style="color:var(--text);">'+s.employee+'</strong></div>';
+h+='<div style="color:var(--warning);font-size:13px;min-width:140px;"><i class="fas fa-calendar-check"></i> '+formatSchedDate(s.followUpDate)+'</div>';
+h+='<div style="flex:1;color:var(--text-muted);font-size:13px;">Re: '+s.topic.replace(/</g,'&lt;')+'</div>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Upcoming sessions
+h+='<div class="form-section"><h3 style="color:var(--gold);"><i class="fas fa-calendar"></i> Upcoming Sessions ('+upcoming.length+')</h3>';
+if(upcoming.length>0){
+upcoming.forEach(s=>{
+h+='<div style="background:var(--navy-dark);border-radius:10px;padding:16px;margin-bottom:10px;border-left:4px solid var(--gold);">';
+h+='<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;">';
+h+='<div><strong style="color:var(--text);font-size:15px;">'+s.employee+'</strong>';
+h+='<div style="color:var(--gold);font-size:13px;margin-top:3px;"><i class="fas fa-calendar"></i> '+formatSchedDate(s.date);
+if(s.followUpDate)h+=' &nbsp; <i class="fas fa-redo"></i> Follow-up: '+formatSchedDate(s.followUpDate);
+h+='</div>';
+h+='<div style="color:var(--text-muted);font-size:13px;margin-top:5px;"><i class="fas fa-comment-dots"></i> '+s.topic.replace(/</g,'&lt;')+'</div></div>';
+h+='<div style="display:flex;gap:6px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="updateSessionStatus('+s.id+',\'Completed\')"><i class="fas fa-check"></i> Complete</button>';
+h+='<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="if(confirm(\'Cancel this session?\'))updateSessionStatus('+s.id+',\'Cancelled\')"><i class="fas fa-times"></i></button>';
+h+='<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button>';
+h+='</div></div>';
+// Notes area
+h+='<div style="margin-top:10px;"><textarea id="schedNotes_'+s.id+'" placeholder="Pre-session notes or agenda items..." style="width:100%;min-height:50px;background:var(--navy);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;font-size:13px;resize:vertical;">'+((s.notes||'').replace(/</g,'&lt;'))+'</textarea>';
+h+='<button class="btn btn-info btn-sm" style="margin-top:5px;" onclick="saveSessionNotes('+s.id+')"><i class="fas fa-save"></i> Save Notes</button></div>';
+h+='</div>';
+});
+}else{
+h+='<p style="color:var(--text-muted);text-align:center;padding:20px;">No upcoming sessions scheduled.</p>';
+}
+h+='</div>';
+
+// Completed sessions
+if(completed.length>0){
+h+='<div class="form-section"><h3 style="color:var(--success);"><i class="fas fa-check-circle"></i> Completed Sessions ('+completed.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Date</th><th>Topic</th><th>Notes</th><th>Follow-Up</th><th></th></tr></thead><tbody>';
+completed.forEach(s=>{
+h+='<tr>';
+h+='<td>'+s.employee+'</td>';
+h+='<td style="font-size:12px;white-space:nowrap;">'+formatSchedDate(s.date)+'</td>';
+h+='<td style="font-size:12px;">'+s.topic.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+(s.notes||'-').replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;">'+(s.followUpDate?formatSchedDate(s.followUpDate):'-')+'</td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+// Cancelled
+if(cancelled.length>0){
+h+='<div class="form-section"><h3 style="color:var(--text-muted);"><i class="fas fa-ban"></i> Cancelled ('+cancelled.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Date</th><th>Topic</th><th></th></tr></thead><tbody>';
+cancelled.forEach(s=>{
+h+='<tr style="opacity:0.6;">';
+h+='<td>'+s.employee+'</td>';
+h+='<td style="font-size:12px;">'+formatSchedDate(s.date)+'</td>';
+h+='<td style="font-size:12px;">'+s.topic.replace(/</g,'&lt;')+'</td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+if(sched.length===0){
+h+='<div class="form-section" style="text-align:center;padding:40px;"><i class="fas fa-calendar-check" style="font-size:48px;color:var(--gold);margin-bottom:15px;display:block;"></i>';
+h+='<h3 style="color:var(--gold);">No Sessions Yet</h3>';
+h+='<p style="color:var(--text-muted);">Schedule your first coaching session using the form above.</p></div>';
+}
+
+document.getElementById('content').innerHTML=h;
+}
+
+const SEED_DATA={"2026-04":{cc_team:{tow:31,parkpliant:0,lotfull:'',towincident:19,frt:5,listing_issue:24,tracking_sheet:4,avg_response_team:5,resolution_rate_team:99.9},admin_team:{endorsements:95,daily_task:95,inventory:15,new_listing:95,revision:'',facility_audit:'',facility_action:0,tow_assign:5,parkpliant_admin:0,split_revenue:60},ccTeamGrossOverride:610,ccTeamNetOverride:488,ccMemberCount:7,adminTeamTotalOverride:290,adminMemberCount:5,individual:{Gwen:{cc_report:5,cc_report_desc:'Submitted on time',coaching:7.50,coaching_desc:'Coaching sessions completed',tow_coord:10,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues resolved',avg_response:4,avg_response_desc:'Avg response time met',resolution_rate:5,resolution_rate_desc:'99.90% resolution',tow_invest:7.50,tow_invest_desc:'Investigations completed'},Donita:{tow_coord:10,tow_coord_desc:'Towing coordination',listing_res:15,listing_res_desc:'Listing issues resolved',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations completed'},Michael:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:0,tow_invest_desc:'No investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Angel:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:0,listing_res_desc:'No listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:0,tow_invest_desc:'No investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Christine:{tow_coord:5,tow_coord_desc:'Towing coordination',listing_res:7.50,listing_res_desc:'Listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:5,tow_invest_desc:'Investigations'},Hazel:{h_resolution:10,h_resolution_desc:'25.38% refund reduction (Mar $3,010.58 to Apr $2,246.46)',h_team_perf:5,h_team_perf_desc:'Team KPI rate: 75%',h_coaching_imp:15,h_coaching_imp_desc:'8 sessions: Angel-3, Michael-2, CJ-1, Jian-1, Joan-1',h_process_imp:15,h_process_imp_desc:'Facility Data Lookup, Reinforcement Lookup, Monthly Booking Lookup'},Joan:{a_report:5,a_report_desc:'Report submitted',a_coaching:7.50,a_coaching_desc:'Coaching done',a_weekly:5,a_weekly_desc:'Weekly tasks',a_inventory:5,a_inventory_desc:'Inventory mgmt',a_listing:7.50,a_listing_desc:'Listing mgmt',a_facility_audit:0,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'},Lovely:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:10,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:10,a_facility_action_desc:'Audit actions',a_tow_assign:10,a_tow_assign_desc:'Towing assignment'},Jian:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:8,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'}},deductions:[{description:'PW Customer ID 800350593, 358 Chestnut Hill Ave - Invalid tow reimbursement $178.87',amount:178.87,person:'Angel'},{description:'PW Customer ID 799281928, 81 Huron Ave - Invalid tow reimbursement $200',amount:200,person:'Donita'}],coaching:{},topPerformer:{cc:'Gwen',admin:'Lovely'},lowPerformer:{cc:'Angel',admin:'Jian'}},"2026-05":{cc_team:{tow:9,parkpliant:1,lotfull:'',towincident:22,frt:0,listing_issue:20,tracking_sheet:4,avg_response_team:0,resolution_rate_team:99.8},admin_team:{endorsements:95,daily_task:95,inventory:30,new_listing:95,revision:'',facility_audit:90,facility_action:44,tow_assign:5,parkpliant_admin:4,split_revenue:60},ccTeamGrossOverride:412,ccTeamNetOverride:370.80,ccMemberCount:7,adminTeamTotalOverride:467,adminMemberCount:5,individual:{Gwen:{cc_report:5,cc_report_desc:'Report submitted',coaching:7.50,coaching_desc:'Coaching sessions',tow_coord:0,tow_coord_desc:'No towing coordination',listing_res:10,listing_res_desc:'Listing issues resolved',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:5,resolution_rate_desc:'Resolution rate met',tow_invest:7.50,tow_invest_desc:'Investigations completed'},Donita:{tow_coord:2,tow_coord_desc:'Towing coordination',listing_res:7.50,listing_res_desc:'Listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations completed'},Michael:{tow_coord:3.75,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Angel:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:0,listing_res_desc:'No listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:5,tow_invest_desc:'Investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Christine:{tow_coord:5,tow_coord_desc:'Towing coordination',listing_res:12,listing_res_desc:'Listing issues resolved',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations'},Hazel:{h_resolution:10,h_resolution_desc:'13.94% refund reduction (Apr $2,292.96 to May $1,973.13)',h_team_perf:5,h_team_perf_desc:'Team KPI rate: 71%',h_coaching_imp:15,h_coaching_imp_desc:'8 coaching sessions',h_process_imp:15,h_process_imp_desc:'Migrated Excel Facility DB to Airtable'},Joan:{a_report:5,a_report_desc:'Report submitted',a_coaching:7.50,a_coaching_desc:'Coaching done',a_weekly:5,a_weekly_desc:'Weekly tasks',a_inventory:5,a_inventory_desc:'Inventory mgmt',a_listing:7.50,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'},Lovely:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:10,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:10,a_facility_action_desc:'Audit actions',a_tow_assign:10,a_tow_assign_desc:'Towing assignment'},Jian:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:5,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'}},deductions:[{description:'Customer ID 573094833 - Towed 4/14/2026, reimbursed 5/29/2026',amount:41.20,person:'Donita'}],coaching:{},topPerformer:{cc:'Michael',admin:'Lovely'},lowPerformer:{cc:'Angel',admin:'Jian'}}};
+
+function init(){
+loadData();
+// Always ensure seed data is present for April & May
+for(const[month,monthData]of Object.entries(SEED_DATA)){
+if(!data[month]||!data[month].individual||Object.keys(data[month].individual).length===0){
+data[month]={
+cc_team:monthData.cc_team||{},
+admin_team:monthData.admin_team||{},
+individual:monthData.individual||{},
+deductions:monthData.deductions||[],
+coaching:monthData.coaching||{},
+topPerformer:monthData.topPerformer||{cc:'',admin:''},
+lowPerformer:monthData.lowPerformer||{cc:'',admin:''},
+ccTeamGrossOverride:monthData.ccTeamGrossOverride,
+ccTeamNetOverride:monthData.ccTeamNetOverride,
+ccMemberCount:monthData.ccMemberCount,
+adminTeamTotalOverride:monthData.adminTeamTotalOverride,
+adminMemberCount:monthData.adminMemberCount
+};
+}
+}
+saveData();
+const sel=document.getElementById('monthSelect');
+MONTHS.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label;sel.appendChild(o);});
+sel.value=currentMonth;
+document.querySelectorAll('.nav-item').forEach(n=>{
+n.addEventListener('click',()=>{navigate(n.dataset.page);document.getElementById('sidebar').classList.remove('open');});
+});
+renderDashboard();
+}
+init();
+</script>
+</body>
+</html>
