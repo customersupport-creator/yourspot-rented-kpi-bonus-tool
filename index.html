@@ -320,9 +320,40 @@ return kpi.name;
 function loadData(){try{data=JSON.parse(localStorage.getItem('ysrkpi_data'))||{};}catch(e){data={};}}
 function saveData(){localStorage.setItem('ysrkpi_data',JSON.stringify(data));}
 function getMonthData(m){
-if(!data[m])data[m]={cc_team:{},admin_team:{},individual:{},deductions:[],coaching:{},topPerformer:{cc:'',admin:''},lowPerformer:{cc:'',admin:''},ccTeamGrossOverride:null,ccTeamNetOverride:null,ccMemberCount:null,adminTeamTotalOverride:null,adminMemberCount:null};
+if(!data[m])data[m]={cc_team:{},admin_team:{},individual:{},deductions:[],coaching:{},topPerformer:{cc:'',admin:''},lowPerformer:{cc:'',admin:''},ccTeamGrossOverride:null,ccTeamNetOverride:null,ccMemberCount:null,adminTeamTotalOverride:null,adminMemberCount:null,weeklyCC:{},weeklyAdmin:{},weeklyInd:{},weeklyOverrides:{}};
+if(!data[m].weeklyCC)data[m].weeklyCC={};
+if(!data[m].weeklyAdmin)data[m].weeklyAdmin={};
+if(!data[m].weeklyInd)data[m].weeklyInd={};
+if(!data[m].weeklyOverrides)data[m].weeklyOverrides={};
 return data[m];
 }
+function getWeekRanges(monthKey){
+const[y,mo]=monthKey.split('-').map(Number);
+const first=new Date(y,mo-1,1);const lastDay=new Date(y,mo,0).getDate();
+const weeks=[];let start=1;
+const dayOfWeek=first.getDay();
+if(dayOfWeek!==1){
+const daysToSun=dayOfWeek===0?0:7-dayOfWeek;
+const end=Math.min(start+daysToSun,lastDay);
+weeks.push({id:'w1',start:start,end:end,label:'Week 1 ('+monthKey.slice(5)+'/'+String(start).padStart(2,'0')+'-'+monthKey.slice(5)+'/'+String(end).padStart(2,'0')+')'});
+start=end+1;
+}
+let wNum=weeks.length+1;
+while(start<=lastDay){
+const end=Math.min(start+6,lastDay);
+weeks.push({id:'w'+wNum,start:start,end:end,label:'Week '+wNum+' ('+monthKey.slice(5)+'/'+String(start).padStart(2,'0')+'-'+monthKey.slice(5)+'/'+String(end).padStart(2,'0')+')'});
+start=end+1;wNum++;
+}
+return weeks;
+}
+function getWeeklySum(weeklyObj,kpiId,weeks){
+let sum=0;weeks.forEach(w=>{sum+=parseFloat((weeklyObj[kpiId]||{})[w.id])||0;});return sum;
+}
+function updateWeeklyCC(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyCC[kpiId])d.weeklyCC[kpiId]={};d.weeklyCC[kpiId][weekId]=val;if(!d.weeklyOverrides['cc_'+kpiId]){d.cc_team[kpiId]=getWeeklySum(d.weeklyCC,kpiId,getWeekRanges(currentMonth));}}
+function updateWeeklyAdmin(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyAdmin[kpiId])d.weeklyAdmin[kpiId]={};d.weeklyAdmin[kpiId][weekId]=val;if(!d.weeklyOverrides['admin_'+kpiId]){d.admin_team[kpiId]=getWeeklySum(d.weeklyAdmin,kpiId,getWeekRanges(currentMonth));}}
+function updateWeeklyInd(person,kpiId,weekId,val){const d=getMonthData(currentMonth);const key=person+'_'+kpiId;if(!d.weeklyInd[key])d.weeklyInd[key]={};d.weeklyInd[key][weekId]=val;if(!d.weeklyOverrides['ind_'+key]){if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId]=getWeeklySum(d.weeklyInd,key,getWeekRanges(currentMonth));}}
+function toggleWeeklyOverride(type,kpiId,isOverride){const d=getMonthData(currentMonth);d.weeklyOverrides[type+'_'+kpiId]=isOverride;saveData();}
+let expandedWeekly={};
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function fmt(v){return'$'+parseFloat(v||0).toFixed(2);}
 
@@ -532,20 +563,38 @@ charts.trend=new Chart(ctx2,{type:'line',data:{labels:mLabels,datasets:[{label:'
 function renderCCTeam(){
 const d=getMonthData(currentMonth);
 const ccKpis=getCCTeamKPIs(currentMonth);
+const weeks=getWeekRanges(currentMonth);
 let h='<div class="form-section"><h3><i class="fas fa-headset"></i> CC Team KPIs</h3>';
 ccKpis.forEach(kpi=>{
+const isOverride=d.weeklyOverrides['cc_'+kpi.id];
 const val=d.cc_team[kpi.id]!==undefined?d.cc_team[kpi.id]:'';
 const calc=calcCCTeamKPI(kpi,val);
-h+='<div class="form-group">';
+const wKey='cc_'+kpi.id;
+const isExpanded=expandedWeekly[wKey];
+h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+(kpi.impact?' <span class="impact impact-'+kpi.impact+'">'+kpi.impact+'</span>':'')+'</label>';
 if(kpi.type==='tier_time'){
-h+='<select onchange="updateCCTeam(\''+kpi.id+'\',this.value)">';
+h+='<select onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);">';
 kpi.tiers.forEach(t=>{h+='<option value="'+t.val+'"'+(parseFloat(val)===t.val?' selected':'')+'>'+t.label+' ($'+t.val+')</option>';});
 h+='</select>';
 }else{
-h+='<input type="number" value="'+val+'" placeholder="'+kpi.unit+'" onchange="updateCCTeam(\''+kpi.id+'\',this.value)">';
+h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
 h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+if(kpi.type!=='tier_time'){
+h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderCCTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
+if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.cc_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyCC,\''+kpi.id+'\',getWeekRanges(currentMonth));renderCCTeam();" title="Reset to weekly sum">Reset</button>';
+}
+if(isExpanded&&kpi.type!=='tier_time'){
+h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=(d.weeklyCC[kpi.id]||{})[w.id]||'';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyCC(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderCCTeam();"></div>';
+});
+h+='</div></div>';
+}
 h+='</div>';
 });
 h+='</div>';
@@ -598,21 +647,40 @@ function saveCCTeam(){saveData();renderCCTeam();toast('CC Team KPI saved');}
 function renderAdminTeam(){
 const d=getMonthData(currentMonth);
 const adminKpis=getAdminTeamKPIs(currentMonth);
+const weeks=getWeekRanges(currentMonth);
 let h='<div class="form-section"><h3><i class="fas fa-cogs"></i> Admin Team KPIs</h3>';
 adminKpis.forEach(kpi=>{
+const isOverride=d.weeklyOverrides['admin_'+kpi.id];
 const val=d.admin_team[kpi.id]!==undefined?d.admin_team[kpi.id]:'';
 const calc=calcAdminTeamKPI(kpi,val);
-h+='<div class="form-group">';
+const wKey='admin_'+kpi.id;
+const isExpanded=expandedWeekly[wKey];
+const isDropdown=kpi.type==='select';
+h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+'</label>';
-if(kpi.type==='select'){
-h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value)">';
+if(isDropdown){
+h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);">';
 h+='<option value="">-- Select --</option>';
 kpi.options.forEach(o=>{h+='<option value="'+o.val+'"'+(parseFloat(val)===o.val?' selected':'')+'>'+o.label+' ($'+o.val+')</option>';});
 h+='</select>';
 }else{
-h+='<input type="number" value="'+val+'" placeholder="'+kpi.unit+'" onchange="updateAdminTeam(\''+kpi.id+'\',this.value)">';
+h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
 h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+if(!isDropdown){
+h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderAdminTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
+if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.admin_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyAdmin,\''+kpi.id+'\',getWeekRanges(currentMonth));renderAdminTeam();" title="Reset to weekly sum">Reset</button>';
+}
+if(isExpanded&&!isDropdown){
+h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=(d.weeklyAdmin[kpi.id]||{})[w.id]||'';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyAdmin(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderAdminTeam();"></div>';
+});
+h+='</div></div>';
+}
 h+='</div>';
 });
 h+='</div>';
@@ -643,6 +711,7 @@ ALL_MEMBERS.forEach(p=>{h+='<div class="tab'+(p===currentIndPerson?' active':'')
 h+='</div>';
 const kpis=getKPIsForPerson(currentIndPerson);
 const pData=d.individual[currentIndPerson]||{};
+const weeks=getWeekRanges(currentMonth);
 const titleStr=MEMBER_TITLES[currentIndPerson]?' <span style="font-size:13px;color:var(--text-muted);font-weight:400;">('+MEMBER_TITLES[currentIndPerson]+')</span>':'';
 h+='<div class="form-section"><h3><i class="fas fa-user"></i> '+currentIndPerson+titleStr+' - Individual KPIs</h3>';
 let total=0;
@@ -654,10 +723,26 @@ const val=parseFloat(pData[kpi.id])||0;
 const desc=pData[kpi.id+'_desc']||'';
 total+=val;
 const displayName=getKPIDisplayName(kpi,currentMonth);
-h+='<div class="form-group">';
+const indKey=currentIndPerson+'_'+kpi.id;
+const isOverride=d.weeklyOverrides['ind_'+indKey];
+const wKey='ind_'+indKey;
+const isExpanded=expandedWeekly[wKey];
+h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+displayName+(kpi.weight?' <span style="color:var(--text-muted);font-size:11px;">('+kpi.weight+'%, max $'+kpi.max+')</span>':'<span style="color:var(--text-muted);font-size:11px;">(max $'+kpi.max+')</span>')+'</label>';
-h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="width:80px;">';
-h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:200px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'ind\',\''+indKey+'\',true);" style="width:80px;"'+(isOverride?' title="Manual override active"':'')+'>';
+h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:150px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderIndividual();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
+if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'ind\',\''+indKey+'\',false);const dd=getMonthData(currentMonth);if(!dd.individual[\''+currentIndPerson+'\'])dd.individual[\''+currentIndPerson+'\']={};dd.individual[\''+currentIndPerson+'\'][\''+kpi.id+'\']=getWeeklySum(dd.weeklyInd,\''+indKey+'\',getWeekRanges(currentMonth));renderIndividual();" title="Reset to weekly sum">Reset</button>';
+if(isExpanded){
+h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=(d.weeklyInd[indKey]||{})[w.id]||'';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" step="0.01" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyInd(\''+currentIndPerson+'\',\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderIndividual();"></div>';
+});
+h+='</div></div>';
+}
 h+='</div>';
 });
 // Invalid Tow Deduction — Progressive from June 2026, flat 25% before
@@ -975,7 +1060,34 @@ const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
 const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamTotal(currentMonth);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const weeks=getWeekRanges(currentMonth);
 let h='<div class="form-section"><h3><i class="fas fa-calendar-week"></i> Weekly Status Report — '+mLabel+'</h3>';
+// Weekly Progress Timeline
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-calendar-alt"></i> Weekly Progress Timeline</h4>';
+h+='<table><thead><tr><th>Week</th><th>Dates</th>';
+CC_MEMBERS.forEach(p=>{h+='<th style="font-size:11px;">'+p+'</th>';});
+h+='<th style="font-size:11px;border-left:2px solid var(--gold);">CC Pool</th>';
+ADMIN_MEMBERS.forEach(p=>{h+='<th style="font-size:11px;">'+p+'</th>';});
+h+='<th style="font-size:11px;border-left:2px solid var(--gold);">Admin Pool</th></tr></thead><tbody>';
+weeks.forEach(w=>{
+h+='<tr><td style="font-weight:600;white-space:nowrap;">'+w.id.toUpperCase()+'</td><td style="font-size:11px;white-space:nowrap;">'+w.label.replace(/Week \d+ \(/,'').replace(')','')+'</td>';
+CC_MEMBERS.forEach(p=>{
+const kpis=getKPIsForPerson(p);let wTotal=0;
+kpis.forEach(k=>{const key=p+'_'+k.id;wTotal+=parseFloat((d.weeklyInd[key]||{})[w.id])||0;});
+h+='<td style="font-size:12px;color:'+(wTotal>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(wTotal)+'</td>';
+});
+let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);ccKpis.forEach(k=>{ccWk+=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;});
+h+='<td style="font-size:12px;border-left:2px solid var(--gold);color:'+(ccWk>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(ccWk)+'</td>';
+ADMIN_MEMBERS.forEach(p=>{
+const kpis=getKPIsForPerson(p);let wTotal=0;
+kpis.forEach(k=>{const key=p+'_'+k.id;wTotal+=parseFloat((d.weeklyInd[key]||{})[w.id])||0;});
+h+='<td style="font-size:12px;color:'+(wTotal>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(wTotal)+'</td>';
+});
+let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);adKpis.forEach(k=>{adWk+=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;});
+h+='<td style="font-size:12px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(adWk)+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
 // Team Pool Status
 h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">';
 h+='<div class="stat-card"><div class="stat-label">CC Team Pool (Net)</div><div class="stat-value">'+fmt(ccNet)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(ccNet/ccCount)+' (÷'+ccCount+')</div></div>';
@@ -1081,8 +1193,15 @@ const d=getMonthData(currentMonth);const mLabel=MONTHS.find(m=>m.key===currentMo
 const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamTotal(currentMonth);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const expWeeks=getWeekRanges(currentMonth);
 let txt='YourSpot Rented - Weekly Status Report\n'+mLabel+'\nGenerated: '+new Date().toLocaleDateString()+'\n'+'='.repeat(60)+'\n\n';
-txt+='TEAM POOL STATUS\n'+'-'.repeat(40)+'\n';
+txt+='WEEKLY PROGRESS TIMELINE\n'+'-'.repeat(40)+'\n';
+expWeeks.forEach(w=>{
+txt+=w.label+':\n';
+CC_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let wt=0;kpis.forEach(k=>{wt+=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;});txt+='  '+p.padEnd(12)+' '+fmt(wt)+'\n';});
+ADMIN_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let wt=0;kpis.forEach(k=>{wt+=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;});txt+='  '+p.padEnd(12)+' '+fmt(wt)+'\n';});
+});
+txt+='\nTEAM POOL STATUS\n'+'-'.repeat(40)+'\n';
 txt+='CC Team Pool (Net): '+fmt(ccNet)+' | Per member: '+fmt(ccNet/ccCount)+'\n';
 txt+='Admin Team Pool: '+fmt(adminTotal)+' | Per member: '+fmt(adminTotal/adminCount)+'\n\n';
 txt+='CC TEAM RANKINGS\n'+'-'.repeat(40)+'\n';
