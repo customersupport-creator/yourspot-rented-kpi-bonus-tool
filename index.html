@@ -224,74 +224,74 @@ return ADMIN_TEAM_KPIS_NEW;
 
 // Per-person Individual KPIs — each person has unique categories and max values
 const ANGEL_KPIS=[
-{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50},
-{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
-{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
-{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
-{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10},
-{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50}
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50,unit:'tow',attainType:'count'},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10,unit:'issue',attainType:'count'},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50,unit:'min avg',attainType:'avg'},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50,unit:'%',attainType:'pct'},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10,unit:'investigation',attainType:'count'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50,unit:'week',attainType:'count'}
 ];
 
 const CHRISTINE_KPIS=[
-{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
-{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15},
-{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
-{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
-{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10}
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10,unit:'tow',attainType:'count'},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15,unit:'issue',attainType:'count'},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50,unit:'min avg',attainType:'avg'},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50,unit:'%',attainType:'pct'},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10,unit:'investigation',attainType:'count'}
 ];
 
 const DONITA_KPIS=[
-{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
-{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15},
-{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
-{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
-{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10}
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10,unit:'tow',attainType:'count'},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:30,max:15,unit:'issue',attainType:'count'},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50,unit:'min avg',attainType:'avg'},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50,unit:'%',attainType:'pct'},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10,unit:'investigation',attainType:'count'}
 ];
 
 const GWEN_KPIS=[
-{id:'cc_report',name:'CC Team KPI Monthly Report',weight:10,max:5},
-{id:'coaching',name:'Coaching of CC Personnel',weight:15,max:7.50},
-{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10},
-{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
-{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:10,max:5},
-{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:10,max:5},
-{id:'tow_invest',name:'Towing Incident Investigation',weight:15,max:7.50}
+{id:'cc_report',name:'CC Team KPI Monthly Report',weight:10,max:5,unit:'report',attainType:'binary'},
+{id:'coaching',name:'Coaching of CC Personnel',weight:15,max:7.50,unit:'session',attainType:'binary'},
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:20,max:10,unit:'tow',attainType:'count'},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10,unit:'issue',attainType:'count'},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:10,max:5,unit:'min avg',attainType:'avg'},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:10,max:5,unit:'%',attainType:'pct'},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:15,max:7.50,unit:'investigation',attainType:'count'}
 ];
 
 const MICHAEL_KPIS=[
-{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50},
-{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10},
-{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50},
-{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50},
-{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10},
-{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50}
+{id:'tow_coord',name:'Illegal Parker Towing Coordination',weight:15,max:7.50,unit:'tow',attainType:'count'},
+{id:'listing_res',name:'Customer Reported Listing Issue Resolution',oldName:'Listing Issue Resolution',weight:20,max:10,unit:'issue',attainType:'count'},
+{id:'avg_response',name:'First Response Time (FRT)',oldName:'Customer Average Response Time',weight:15,max:7.50,unit:'min avg',attainType:'avg'},
+{id:'resolution_rate',name:'Lot Full Enforcement Effectiveness',oldName:'Issue Resolution Rate',weight:15,max:7.50,unit:'%',attainType:'pct'},
+{id:'tow_invest',name:'Towing Incident Investigation',weight:20,max:10,unit:'investigation',attainType:'count'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update',weight:15,max:7.50,unit:'week',attainType:'count'}
 ];
 
 const HAZEL_KPIS=[
-{id:'h_resolution',name:'Resolution Effectiveness & Quality',weight:20,max:10},
-{id:'h_team_perf',name:'Team Performance & Accountability',weight:20,max:10},
-{id:'h_coaching_imp',name:'Coaching / Improvement Actions Taken',weight:30,max:15},
-{id:'h_process_imp',name:'Process Improvement Implementation',weight:30,max:15}
+{id:'h_resolution',name:'Resolution Effectiveness & Quality',weight:20,max:10,unit:'% reduction',attainType:'pct'},
+{id:'h_team_perf',name:'Team Performance & Accountability',weight:20,max:10,unit:'% hitting KPIs',attainType:'pct'},
+{id:'h_coaching_imp',name:'Coaching / Improvement Actions Taken',weight:30,max:15,unit:'session',attainType:'count'},
+{id:'h_process_imp',name:'Process Improvement Implementation',weight:30,max:15,unit:'improvement',attainType:'count'}
 ];
 
 const JOAN_KPIS=[
-{id:'a_report',name:'Admin Team KPI Monthly Report',weight:10,max:5},
-{id:'a_coaching',name:'Coaching of Admin Personnel',weight:15,max:7.50},
-{id:'a_weekly',name:'Weekly Report',weight:10,max:5},
-{id:'a_inventory',name:'Platform Inventory Mgmt',weight:10,max:5},
-{id:'a_listing',name:'New Listing & Revision Mgmt',weight:15,max:7.50},
-{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5},
-{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10},
-{id:'a_tow_assign',name:'Towing Company Assignment',weight:10,max:5}
+{id:'a_report',name:'Admin Team KPI Monthly Report',weight:10,max:5,unit:'report',attainType:'binary'},
+{id:'a_coaching',name:'Coaching of Admin Personnel',weight:15,max:7.50,unit:'session',attainType:'binary'},
+{id:'a_weekly',name:'Weekly Report',weight:10,max:5,unit:'report',attainType:'count'},
+{id:'a_inventory',name:'Platform Inventory Mgmt',weight:10,max:5,unit:'audit',attainType:'binary'},
+{id:'a_listing',name:'New Listing & Revision Mgmt',weight:15,max:7.50,unit:'listing/revision',attainType:'count'},
+{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5,unit:'facility',attainType:'count'},
+{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10,unit:'action',attainType:'count'},
+{id:'a_tow_assign',name:'Towing Company Assignment',weight:10,max:5,unit:'company',attainType:'count'}
 ];
 
 const ADMIN_INDIVIDUAL_KPIS=[
-{id:'a_daily_task',name:'Daily Task Monitoring',weight:10,max:5},
-{id:'a_inventory',name:'Platform Inventory Mgmt',weight:20,max:10},
-{id:'a_listing',name:'New Listing & Revision Mgmt',weight:20,max:10},
-{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5},
-{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10},
-{id:'a_tow_assign',name:'Towing Company Assignment',weight:20,max:10}
+{id:'a_daily_task',name:'Daily Task Monitoring',weight:10,max:5,unit:'% completed',attainType:'pct'},
+{id:'a_inventory',name:'Platform Inventory Mgmt',weight:20,max:10,unit:'audit',attainType:'binary'},
+{id:'a_listing',name:'New Listing & Revision Mgmt',weight:20,max:10,unit:'listing/revision',attainType:'count'},
+{id:'a_facility_audit',name:'Facility Listings Auditing',weight:10,max:5,unit:'facility',attainType:'count'},
+{id:'a_facility_action',name:'Facility Auditing Action',weight:20,max:10,unit:'action',attainType:'count'},
+{id:'a_tow_assign',name:'Towing Company Assignment',weight:20,max:10,unit:'company',attainType:'count'}
 ];
 
 function getKPIsForPerson(p){
@@ -351,7 +351,7 @@ let sum=0;weeks.forEach(w=>{sum+=parseFloat((weeklyObj[kpiId]||{})[w.id])||0;});
 }
 function updateWeeklyCC(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyCC[kpiId])d.weeklyCC[kpiId]={};d.weeklyCC[kpiId][weekId]=val;if(!d.weeklyOverrides['cc_'+kpiId]){d.cc_team[kpiId]=getWeeklySum(d.weeklyCC,kpiId,getWeekRanges(currentMonth));}}
 function updateWeeklyAdmin(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyAdmin[kpiId])d.weeklyAdmin[kpiId]={};d.weeklyAdmin[kpiId][weekId]=val;if(!d.weeklyOverrides['admin_'+kpiId]){d.admin_team[kpiId]=getWeeklySum(d.weeklyAdmin,kpiId,getWeekRanges(currentMonth));}}
-function updateWeeklyInd(person,kpiId,weekId,val){const d=getMonthData(currentMonth);const key=person+'_'+kpiId;if(!d.weeklyInd[key])d.weeklyInd[key]={};d.weeklyInd[key][weekId]=val;if(!d.weeklyOverrides['ind_'+key]){if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId]=getWeeklySum(d.weeklyInd,key,getWeekRanges(currentMonth));}}
+function updateWeeklyInd(person,kpiId,weekId,val){const d=getMonthData(currentMonth);const key=person+'_'+kpiId;if(!d.weeklyInd[key])d.weeklyInd[key]={};d.weeklyInd[key][weekId]=val;}
 function toggleWeeklyOverride(type,kpiId,isOverride){const d=getMonthData(currentMonth);d.weeklyOverrides[type+'_'+kpiId]=isOverride;saveData();}
 let expandedWeekly={};
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -587,13 +587,14 @@ if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:1
 }
 if(isExpanded&&kpi.type!=='tier_time'){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
-h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
-h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
 weeks.forEach(w=>{
 const wVal=(d.weeklyCC[kpi.id]||{})[w.id]||'';
-h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyCC(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderCCTeam();"></div>';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyCC(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderCCTeam();"><span style="font-size:10px;color:var(--text-muted);">'+kpi.unit+'</span></div>';
 });
-h+='</div></div>';
+const ccWkTotal=getWeeklySum(d.weeklyCC,kpi.id,weeks);
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">Monthly Total: '+ccWkTotal+' '+kpi.unit+(ccWkTotal!==1?'s':'')+'</div></div>';
 }
 h+='</div>';
 });
@@ -673,13 +674,14 @@ if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:1
 }
 if(isExpanded&&!isDropdown){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
-h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
-h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
 weeks.forEach(w=>{
 const wVal=(d.weeklyAdmin[kpi.id]||{})[w.id]||'';
-h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyAdmin(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderAdminTeam();"></div>';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyAdmin(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderAdminTeam();"><span style="font-size:10px;color:var(--text-muted);">'+kpi.unit+'</span></div>';
 });
-h+='</div></div>';
+const adWkTotal=getWeeklySum(d.weeklyAdmin,kpi.id,weeks);
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">Monthly Total: '+adWkTotal+' '+kpi.unit+(adWkTotal!==1?'s':'')+'</div></div>';
 }
 h+='</div>';
 });
@@ -731,17 +733,24 @@ h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+displayName+(kpi.weight?' <span style="color:var(--text-muted);font-size:11px;">('+kpi.weight+'%, max $'+kpi.max+')</span>':'<span style="color:var(--text-muted);font-size:11px;">(max $'+kpi.max+')</span>')+'</label>';
 h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'ind\',\''+indKey+'\',true);" style="width:80px;"'+(isOverride?' title="Manual override active"':'')+'>';
 h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:150px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+const indUnit=kpi.unit||'unit';
+const indAttainType=kpi.attainType||'count';
 h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderIndividual();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
-if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'ind\',\''+indKey+'\',false);const dd=getMonthData(currentMonth);if(!dd.individual[\''+currentIndPerson+'\'])dd.individual[\''+currentIndPerson+'\']={};dd.individual[\''+currentIndPerson+'\'][\''+kpi.id+'\']=getWeeklySum(dd.weeklyInd,\''+indKey+'\',getWeekRanges(currentMonth));renderIndividual();" title="Reset to weekly sum">Reset</button>';
 if(isExpanded){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
-h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
-h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Attainment <span style="color:var(--text-muted);font-weight:400;">('+indUnit+')</span></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
 weeks.forEach(w=>{
 const wVal=(d.weeklyInd[indKey]||{})[w.id]||'';
-h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" step="0.01" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyInd(\''+currentIndPerson+'\',\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderIndividual();"></div>';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" step="'+(indAttainType==='avg'||indAttainType==='pct'?'0.01':'1')+'" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyInd(\''+currentIndPerson+'\',\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderIndividual();"><span style="font-size:10px;color:var(--text-muted);">'+indUnit+'</span></div>';
 });
-h+='</div></div>';
+const indWkTotal=getWeeklySum(d.weeklyInd,indKey,weeks);
+const indWkCount=weeks.filter(w=>(d.weeklyInd[indKey]||{})[w.id]).length;
+let indSummary='';
+if(indAttainType==='avg'&&indWkCount>0){indSummary='Avg: '+(indWkTotal/indWkCount).toFixed(1)+' '+indUnit;}
+else if(indAttainType==='pct'){indSummary='Latest: '+(function(){let last='';weeks.forEach(w=>{const v=(d.weeklyInd[indKey]||{})[w.id];if(v)last=v;});return last||'—';})()+' '+indUnit;}
+else{indSummary='Total: '+indWkTotal+' '+indUnit+(indWkTotal!==1?'s':'');}
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">'+indSummary+'</div></div>';
 }
 h+='</div>';
 });
@@ -1072,19 +1081,19 @@ h+='<th style="font-size:11px;border-left:2px solid var(--gold);">Admin Pool</th
 weeks.forEach(w=>{
 h+='<tr><td style="font-weight:600;white-space:nowrap;">'+w.id.toUpperCase()+'</td><td style="font-size:11px;white-space:nowrap;">'+w.label.replace(/Week \d+ \(/,'').replace(')','')+'</td>';
 CC_MEMBERS.forEach(p=>{
-const kpis=getKPIsForPerson(p);let wTotal=0;
-kpis.forEach(k=>{const key=p+'_'+k.id;wTotal+=parseFloat((d.weeklyInd[key]||{})[w.id])||0;});
-h+='<td style="font-size:12px;color:'+(wTotal>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(wTotal)+'</td>';
+const kpis=getKPIsForPerson(p);let attainParts=[];
+kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
+h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
 });
-let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);ccKpis.forEach(k=>{ccWk+=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;});
-h+='<td style="font-size:12px;border-left:2px solid var(--gold);color:'+(ccWk>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(ccWk)+'</td>';
+let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);let ccParts=[];ccKpis.forEach(k=>{const v=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;ccWk+=v;if(v>0)ccParts.push(v+' '+k.unit);});
+h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(ccWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+ccParts.join(', ')+'">'+(ccParts.length>0?ccParts.join(', '):'—')+'</td>';
 ADMIN_MEMBERS.forEach(p=>{
-const kpis=getKPIsForPerson(p);let wTotal=0;
-kpis.forEach(k=>{const key=p+'_'+k.id;wTotal+=parseFloat((d.weeklyInd[key]||{})[w.id])||0;});
-h+='<td style="font-size:12px;color:'+(wTotal>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(wTotal)+'</td>';
+const kpis=getKPIsForPerson(p);let attainParts=[];
+kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
+h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
 });
-let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);adKpis.forEach(k=>{adWk+=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;});
-h+='<td style="font-size:12px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';">'+fmt(adWk)+'</td>';
+let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
+h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+adParts.join(', ')+'">'+(adParts.length>0?adParts.join(', '):'—')+'</td>';
 h+='</tr>';
 });
 h+='</tbody></table></div>';
@@ -1195,11 +1204,11 @@ const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const expWeeks=getWeekRanges(currentMonth);
 let txt='YourSpot Rented - Weekly Status Report\n'+mLabel+'\nGenerated: '+new Date().toLocaleDateString()+'\n'+'='.repeat(60)+'\n\n';
-txt+='WEEKLY PROGRESS TIMELINE\n'+'-'.repeat(40)+'\n';
+txt+='WEEKLY PROGRESS TIMELINE (Attainment)\n'+'-'.repeat(40)+'\n';
 expWeeks.forEach(w=>{
 txt+=w.label+':\n';
-CC_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let wt=0;kpis.forEach(k=>{wt+=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;});txt+='  '+p.padEnd(12)+' '+fmt(wt)+'\n';});
-ADMIN_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let wt=0;kpis.forEach(k=>{wt+=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;});txt+='  '+p.padEnd(12)+' '+fmt(wt)+'\n';});
+CC_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(k=>{const v=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;if(v>0)parts.push(v+' '+(k.unit||''));});txt+='  '+p.padEnd(12)+' '+(parts.length>0?parts.join(', '):'—')+'\n';});
+ADMIN_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(k=>{const v=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;if(v>0)parts.push(v+' '+(k.unit||''));});txt+='  '+p.padEnd(12)+' '+(parts.length>0?parts.join(', '):'—')+'\n';});
 });
 txt+='\nTEAM POOL STATUS\n'+'-'.repeat(40)+'\n';
 txt+='CC Team Pool (Net): '+fmt(ccNet)+' | Per member: '+fmt(ccNet/ccCount)+'\n';
