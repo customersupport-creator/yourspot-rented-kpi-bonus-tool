@@ -408,9 +408,9 @@ if(numTows<=0||indTotal<=0)return{total:0,tiers:[],net:indTotal};
 let remaining=indTotal;const tiers=[];
 const t1Count=Math.min(numTows,1);
 if(t1Count>0){const ded=remaining*(t1Count*0.05);tiers.push({count:t1Count,rate:5,ded:ded,base:remaining});remaining=Math.max(0,remaining-ded);}
-const t2Count=Math.min(Math.max(numTows-1,0),2);
+const t2Count=Math.min(Math.max(numTows-1,0),6);
 if(t2Count>0){const ded=remaining*(t2Count*0.10);tiers.push({count:t2Count,rate:10,ded:ded,base:remaining});remaining=Math.max(0,remaining-ded);}
-const t3Count=Math.max(numTows-3,0);
+const t3Count=Math.max(numTows-7,0);
 if(t3Count>0){const ded=remaining*(t3Count*0.15);tiers.push({count:t3Count,rate:15,ded:ded,base:remaining});remaining=Math.max(0,remaining-ded);}
 return{total:indTotal-remaining,tiers:tiers,net:remaining};
 }
@@ -428,14 +428,12 @@ if(team==='dual'){teamShare=(ccNet/ccCount)+(adminTotal_/adminCount);}
 else if(team==='cc'){teamShare=ccNet/ccCount;}
 else{teamShare=adminTotal_/adminCount;}
 const personDeds=(d.deductions||[]).filter(ded=>ded.person===person);
-let netInd=indTotal;
-if(m>='2026-06'){const progDed=calcProgressiveDeduction(indTotal,personDeds.length);netInd=indTotal-progDed.total;}
-else{const dedPct=personDeds.length*25;netInd=indTotal*(1-Math.min(dedPct,100)/100);}
 const lowDed=getLowPerfDeduction(m,person);
-let bonus=netInd+teamShare*(1-lowDed);
+const adjTeamShare=teamShare*(1-lowDed);
 const isTop=(team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person);
-if(isTop&&m>='2026-06')bonus+=25;
-return Math.max(0,bonus);
+const topBonus=(isTop&&m>='2026-06')?25:0;
+if(m>='2026-06'){const totalPreDed=indTotal+adjTeamShare+topBonus;const progDed=calcProgressiveDeduction(totalPreDed,personDeds.length);return Math.max(0,totalPreDed-progDed.total);}
+else{const dedPct=personDeds.length*25;const netInd=indTotal*(1-Math.min(dedPct,100)/100);return Math.max(0,netInd+adjTeamShare+topBonus);}
 }
 
 function getConsecutiveLow(person,upToMonth){
@@ -638,12 +636,21 @@ h+='</div>';
 // Invalid Tow Deduction — Progressive from June 2026, flat 25% before
 const personDeds=(d.deductions||[]).filter(ded=>ded.person===currentIndPerson);
 const useProgressive=currentMonth>='2026-06';
-const progDed=calcProgressiveDeduction(total,personDeds.length);
+const indTeam=getTeamForPerson(currentIndPerson);
+let indPageTeamShare=0;
+{const ccN=getCCTeamNet(currentMonth);const ccC=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const adT=getAdminTeamTotal(currentMonth);const adC=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+if(indTeam==='dual'){indPageTeamShare=(ccN/ccC)+(adT/adC);}else if(indTeam==='cc'){indPageTeamShare=ccN/ccC;}else{indPageTeamShare=adT/adC;}}
+const indPageLowDed=getLowPerfDeduction(currentMonth,currentIndPerson);
+const indPageAdjTeam=indPageTeamShare*(1-indPageLowDed);
+const indPageIsTop=((indTeam==='dual'&&(d.topPerformer.cc===currentIndPerson||d.topPerformer.admin===currentIndPerson))||(indTeam==='cc'&&d.topPerformer.cc===currentIndPerson)||(indTeam==='admin'&&d.topPerformer.admin===currentIndPerson))&&currentMonth>='2026-06';
+const indPageTopBonus=indPageIsTop?25:0;
+const indPageTotalPreDed=total+indPageAdjTeam+indPageTopBonus;
+const progDed=calcProgressiveDeduction(indPageTotalPreDed,personDeds.length);
 const flatDedPct=personDeds.length*25;
 const flatDedAmt=total*(Math.min(flatDedPct,100)/100);
 h+='<div style="margin-top:15px;background:rgba(231,76,60,0.08);border-left:3px solid var(--danger);padding:12px 15px;border-radius:0 6px 6px 0;">';
 if(useProgressive){
-h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(Progressive: 1st=5%, 2nd-3rd=10%, 4th+=15%)</span></h4>';
+h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(Progressive from Total Bonus: 1st=5%, 2nd-7th=10%, 8th+=15%)</span></h4>';
 }else{
 h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(each = 25% of individual total)</span></h4>';
 }
@@ -653,9 +660,9 @@ h+='<table style="margin:0 0 10px;"><thead><tr><th>Description</th><th style="wi
 personDeds.forEach((ded,idx)=>{
 const globalIdx=(d.deductions||[]).indexOf(ded);
 let tierLabel='';
-if(idx===0)tierLabel='Tier 1 (5%)';
-else if(idx<=2)tierLabel='Tier 2 (10%)';
-else tierLabel='Tier 3 (15%)';
+if(idx===0)tierLabel='1st case (5%)';
+else if(idx<=6)tierLabel='2nd case (10%)';
+else tierLabel='3rd case (15%)';
 h+='<tr><td style="font-size:13px;">'+((ded.description||'').replace(/</g,'&lt;'))+'</td><td style="color:var(--danger);font-weight:600;font-size:12px;">'+tierLabel+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeIndDed('+globalIdx+')"><i class="fas fa-trash"></i></button></td></tr>';
 });
 h+='</tbody></table>';
@@ -682,13 +689,21 @@ h+='<div style="flex:1;min-width:200px;"><label style="font-size:12px;color:var(
 h+='<button class="btn" style="background:var(--danger);color:#fff;padding:8px 15px;" onclick="addIndDeduction()"><i class="fas fa-plus"></i> Add Deduction</button>';
 h+='</div></div>';
 const dedTotal=useProgressive?progDed.total:flatDedAmt;
-const dedNet=useProgressive?progDed.net:(total-flatDedAmt);
+if(useProgressive){
+const finalB=getFinalBonus(currentMonth,currentIndPerson);
+h+='<div class="summary-box"><h4>Individual KPI Total: '+fmt(total)+'</h4>';
+h+='<div class="row"><span>Team Share'+(indPageLowDed>0?' (after '+(indPageLowDed*100)+'% low ded)':'')+'</span><span class="val">'+fmt(indPageAdjTeam)+'</span></div>';
+if(indPageTopBonus>0) h+='<div class="row"><span>Top Performer Bonus</span><span class="val" style="color:#4caf50;">+'+fmt(indPageTopBonus)+'</span></div>';
+h+='<div class="row" style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px;"><span style="font-weight:700;">Total Bonus (pre-deduction)</span><span class="val" style="font-weight:700;">'+fmt(indPageTotalPreDed)+'</span></div>';
+if(dedTotal>0) h+='<div class="row"><span>Invalid Tow Deduction ('+personDeds.length+' tow'+(personDeds.length>1?'s':'')+')</span><span class="val" style="color:var(--danger);">-'+fmt(dedTotal)+'</span></div>';
+h+='<div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">NET BONUS</span><span class="val" style="font-weight:700;color:var(--gold);">'+fmt(finalB)+'</span></div></div>';
+}else{
+const dedNet=total-flatDedAmt;
 if(dedTotal>0){
-const dedLabel=useProgressive?'Invalid Tow Deduction ('+personDeds.length+' tow'+(personDeds.length>1?'s':'')+')'
-:'Deduction ('+flatDedPct+'%)';
-h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4><div class="row"><span>'+dedLabel+'</span><span class="val" style="color:var(--danger);">-'+fmt(dedTotal)+'</span></div><div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">Net Individual Bonus</span><span class="val" style="font-weight:700;">'+fmt(dedNet)+'</span></div></div>';
+h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4><div class="row"><span>Deduction ('+flatDedPct+'%)</span><span class="val" style="color:var(--danger);">-'+fmt(dedTotal)+'</span></div><div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">Net Individual Bonus</span><span class="val" style="font-weight:700;">'+fmt(dedNet)+'</span></div></div>';
 }else{
 h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4></div>';
+}
 }
 h+='</div>';
 h+='<div class="form-section"><h3>Top/Low Performer Assignment</h3>';
@@ -808,13 +823,15 @@ else if(team==='cc'){teamShare=ccNet/ccCount;}
 else{teamShare=adminTotal/adminCount;}
 const personDeds=(d.deductions||[]).filter(ded=>ded.person===p);
 const useP=currentMonth>='2026-06';
-const progDed=calcProgressiveDeduction(indTotal,personDeds.length);
-const flatDedAmt_=indTotal*(Math.min(personDeds.length*25,100)/100);
-const towDedAmt=useP?progDed.total:flatDedAmt_;
 const lowDed=getLowPerfDeduction(currentMonth,p);
+const adjTS=teamShare*(1-lowDed);
 const isTopRaw=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
 const isTop=isTopRaw&&currentMonth>='2026-06';
 const topBonus=isTop?25:0;
+const totalPreDed=indTotal+adjTS+topBonus;
+const progDed=calcProgressiveDeduction(totalPreDed,personDeds.length);
+const flatDedAmt_=indTotal*(Math.min(personDeds.length*25,100)/100);
+const towDedAmt=useP?progDed.total:flatDedAmt_;
 const final_=getFinalBonus(currentMonth,p);
 const isLow=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
 h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
@@ -842,46 +859,47 @@ h+='</td>';
 h+='<td style="color:'+(towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">'+(towDedAmt>0?'-'+fmt(towDedAmt):'-')+'</td>';
 h+='<td>'+(lowDed*100)+'%</td>';
 h+='<td>'+fmt(topBonus)+'</td>';
-const indBonus=Math.max(0,(indTotal-towDedAmt)+topBonus);
-grandTotal+=indBonus;
-h+='<td style="font-weight:700;color:var(--gold);">'+fmt(indBonus)+'</td>';
+grandTotal+=indTotal;
+h+='<td style="font-weight:700;color:var(--gold);">'+fmt(indTotal)+'</td>';
 h+='</tr>';
 });
 h+='</tbody><tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
 // Total Bonus Section
 h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-trophy"></i> Total Bonus Per Employee</h4>';
-h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual Bonus</th><th>Team Share</th><th>Final Bonus</th></tr></thead><tbody>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual Bonus</th><th>Team Share</th><th>Tow Deduction</th><th>Final Bonus</th></tr></thead><tbody>';
 let finalGrandTotal=0;
 ALL_MEMBERS.forEach(p=>{
 const team=getTeamForPerson(p);
 const indTotal_=getIndividualTotal(currentMonth,p);
-const personDeds_=(d.deductions||[]).filter(ded=>ded.person===p);
-const useP_=currentMonth>='2026-06';
-const progDed_=calcProgressiveDeduction(indTotal_,personDeds_.length);
-const flatDedAmt__=indTotal_*(Math.min(personDeds_.length*25,100)/100);
-const towDedAmt_=useP_?progDed_.total:flatDedAmt__;
-const isTopRaw_=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
-const isTop_=isTopRaw_&&currentMonth>='2026-06';
-const topBonus_=isTop_?25:0;
-const indBonus_=Math.max(0,(indTotal_-towDedAmt_)+topBonus_);
 let teamShare_=0;
 if(team==='dual'){teamShare_=(ccNet/ccCount)+(adminTotal/adminCount);}
 else if(team==='cc'){teamShare_=ccNet/ccCount;}
 else{teamShare_=adminTotal/adminCount;}
 const lowDed_=getLowPerfDeduction(currentMonth,p);
 const adjTeamShare=teamShare_*(1-lowDed_);
-const finalBonus=indBonus_+adjTeamShare;
+const isTopRaw_=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
+const isTop_=isTopRaw_&&currentMonth>='2026-06';
+const topBonus_=isTop_?25:0;
+const indBonus_=indTotal_+topBonus_;
+const totalPreDed_=indBonus_+adjTeamShare;
+const personDeds_=(d.deductions||[]).filter(ded=>ded.person===p);
+const useP_=currentMonth>='2026-06';
+const progDed_=calcProgressiveDeduction(totalPreDed_,personDeds_.length);
+const flatDedAmt__=indTotal_*(Math.min(personDeds_.length*25,100)/100);
+const towDedAmt_=useP_?progDed_.total:flatDedAmt__;
+const finalBonus=Math.max(0,totalPreDed_-towDedAmt_);
 finalGrandTotal+=finalBonus;
 const isLow_=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
 h+='<tr'+(isTop_?' style="background:#4caf5015;"':'')+(isLow_?' style="background:#e74c3c15;"':'')+'>';
 h+='<td style="font-weight:600;">'+p+(isTop_?' <span class="badge badge-top">TOP</span>':'')+(isLow_?' <span class="badge badge-low">LOW</span>':'')+'</td>';
 h+='<td>'+(team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin')+'</td>';
 h+='<td>'+fmt(indBonus_)+'</td>';
-h+='<td>'+fmt(adjTeamShare)+'</td>';
+h+='<td>'+fmt(adjTeamShare)+(lowDed_>0?' <span style="font-size:10px;color:var(--danger);">(-'+(lowDed_*100)+'%)</span>':'')+'</td>';
+h+='<td style="color:'+(towDedAmt_>0?'var(--danger)':'var(--text-muted)')+';">'+(towDedAmt_>0?'-'+fmt(towDedAmt_)+' <span style="font-size:10px;">('+personDeds_.length+' tow'+(personDeds_.length>1?'s':'')+')</span>':'-')+'</td>';
 h+='<td style="font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</td>';
 h+='</tr>';
 });
-h+='</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(finalGrandTotal)+'</td></tr></tfoot></table></div>';
+h+='</tbody><tfoot><tr><td colspan="5" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(finalGrandTotal)+'</td></tr></tfoot></table></div>';
 h+='</div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="printSummary()"><i class="fas fa-print"></i> Print</button><button class="btn btn-info" onclick="exportSummary()"><i class="fas fa-download"></i> Export</button></div>';
 document.getElementById('content').innerHTML=h;
