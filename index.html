@@ -797,7 +797,7 @@ h+='<tr><td colspan="2" style="text-align:right;">Divided among '+adminCount+' t
 h+='</tfoot></table></div>';
 // Individual KPI Bonus - Per-Category Attainment
 h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-user"></i> Individual KPI Bonus</h4>';
-h+='<table><thead><tr><th>Employee</th><th>Team</th><th>KPI Attainment by Category</th><th>Tow Ded</th><th>Team Share</th><th>Low Ded %</th><th>Top Bonus</th><th>Final Bonus</th></tr></thead><tbody>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>KPI Attainment by Category</th><th>Tow Deduction</th><th>Low Ded %</th><th>Top Bonus</th><th>Total Individual Bonus</th></tr></thead><tbody>';
 let grandTotal=0;
 ALL_MEMBERS.forEach(p=>{
 const indTotal=getIndividualTotal(currentMonth,p);
@@ -816,7 +816,6 @@ const isTopRaw=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p)
 const isTop=isTopRaw&&currentMonth>='2026-06';
 const topBonus=isTop?25:0;
 const final_=getFinalBonus(currentMonth,p);
-grandTotal+=final_;
 const isLow=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
 h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
 h+='<td style="font-weight:600;">'+p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
@@ -841,13 +840,48 @@ h+='<div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border
 h+='</td>';
 }
 h+='<td style="color:'+(towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">'+(towDedAmt>0?'-'+fmt(towDedAmt):'-')+'</td>';
-h+='<td>'+fmt(teamShare)+'</td>';
 h+='<td>'+(lowDed*100)+'%</td>';
 h+='<td>'+fmt(topBonus)+'</td>';
-h+='<td style="font-weight:700;color:var(--gold);">'+fmt(final_)+'</td>';
+const indBonus=Math.max(0,(indTotal-towDedAmt)+topBonus);
+grandTotal+=indBonus;
+h+='<td style="font-weight:700;color:var(--gold);">'+fmt(indBonus)+'</td>';
 h+='</tr>';
 });
-h+='</tbody><tfoot><tr><td colspan="7" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
+h+='</tbody><tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
+// Total Bonus Section
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-trophy"></i> Total Bonus Per Employee</h4>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual Bonus</th><th>Team Share</th><th>Final Bonus</th></tr></thead><tbody>';
+let finalGrandTotal=0;
+ALL_MEMBERS.forEach(p=>{
+const team=getTeamForPerson(p);
+const indTotal_=getIndividualTotal(currentMonth,p);
+const personDeds_=(d.deductions||[]).filter(ded=>ded.person===p);
+const useP_=currentMonth>='2026-06';
+const progDed_=calcProgressiveDeduction(indTotal_,personDeds_.length);
+const flatDedAmt__=indTotal_*(Math.min(personDeds_.length*25,100)/100);
+const towDedAmt_=useP_?progDed_.total:flatDedAmt__;
+const isTopRaw_=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
+const isTop_=isTopRaw_&&currentMonth>='2026-06';
+const topBonus_=isTop_?25:0;
+const indBonus_=Math.max(0,(indTotal_-towDedAmt_)+topBonus_);
+let teamShare_=0;
+if(team==='dual'){teamShare_=(ccNet/ccCount)+(adminTotal/adminCount);}
+else if(team==='cc'){teamShare_=ccNet/ccCount;}
+else{teamShare_=adminTotal/adminCount;}
+const lowDed_=getLowPerfDeduction(currentMonth,p);
+const adjTeamShare=teamShare_*(1-lowDed_);
+const finalBonus=indBonus_+adjTeamShare;
+finalGrandTotal+=finalBonus;
+const isLow_=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+h+='<tr'+(isTop_?' style="background:#4caf5015;"':'')+(isLow_?' style="background:#e74c3c15;"':'')+'>';
+h+='<td style="font-weight:600;">'+p+(isTop_?' <span class="badge badge-top">TOP</span>':'')+(isLow_?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td>'+(team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin')+'</td>';
+h+='<td>'+fmt(indBonus_)+'</td>';
+h+='<td>'+fmt(adjTeamShare)+'</td>';
+h+='<td style="font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</td>';
+h+='</tr>';
+});
+h+='</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(finalGrandTotal)+'</td></tr></tfoot></table></div>';
 h+='</div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="printSummary()"><i class="fas fa-print"></i> Print</button><button class="btn btn-info" onclick="exportSummary()"><i class="fas fa-download"></i> Export</button></div>';
 document.getElementById('content').innerHTML=h;
