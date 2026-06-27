@@ -734,6 +734,17 @@ if(kpi.type==='tier_time'){return parseFloat(val)||0;}
 if(kpi.type==='select'){return parseFloat(val)||0;}
 return parseFloat(val)||0;
 }
+function getTeamAttainment(kpi,raw){
+const val=raw[kpi.id];
+if(val===undefined||val===''||val===null)return '';
+const n=parseFloat(val);
+if(isNaN(n))return String(val);
+if(kpi.type==='per_unit')return n+' '+(kpi.unit||(n===1?'unit':'units'));
+if(kpi.type==='tier')return n+(kpi.unit||'');
+if(kpi.type==='tier_time')return n+' '+(kpi.unit||'avg minutes');
+if(kpi.type==='select')return n>0?fmt(n):'$0.00';
+return String(n);
+}
 function renderSummary(){
 const d=getMonthData(currentMonth);
 const ccNet=getCCTeamNet(currentMonth);
@@ -750,9 +761,11 @@ h+='<table><thead><tr><th>Category</th><th>Attainment</th><th style="width:100px
 ccKpis.forEach(kpi=>{
 const earned=getKPIEarned(kpi,d,'cc_team');
 const desc=(d.cc_team||{})[kpi.id+'_desc']||'';
+const autoAtt=getTeamAttainment(kpi,d.cc_team||{});
+const attText=desc||autoAtt;
 const displayName=getKPIDisplayName(kpi,currentMonth);
 h+='<tr><td style="font-weight:600;">'+displayName+'</td>';
-h+='<td style="font-size:13px;color:var(--text-muted);">'+(desc||'<em>No data entered</em>')+'</td>';
+h+='<td style="font-size:13px;color:var(--text-muted);">'+(attText||'<em>No data entered</em>')+'</td>';
 h+='<td style="font-weight:600;color:var(--gold);">'+fmt(earned)+'</td></tr>';
 });
 h+='</tbody><tfoot>';
@@ -771,9 +784,11 @@ h+='<table><thead><tr><th>Category</th><th>Attainment</th><th style="width:100px
 adminKpis.forEach(kpi=>{
 const earned=getKPIEarned(kpi,d,'admin_team');
 const desc=(d.admin_team||{})[kpi.id+'_desc']||'';
+const autoAtt=getTeamAttainment(kpi,d.admin_team||{});
+const attText=desc||autoAtt;
 const displayName=getKPIDisplayName(kpi,currentMonth);
 h+='<tr><td style="font-weight:600;">'+displayName+'</td>';
-h+='<td style="font-size:13px;color:var(--text-muted);">'+(desc||'<em>No data entered</em>')+'</td>';
+h+='<td style="font-size:13px;color:var(--text-muted);">'+(attText||'<em>No data entered</em>')+'</td>';
 h+='<td style="font-weight:600;color:var(--gold);">'+fmt(earned)+'</td></tr>';
 });
 h+='</tbody><tfoot>';
