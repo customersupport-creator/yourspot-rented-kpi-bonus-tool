@@ -305,6 +305,12 @@ if(p==='Michael')return MICHAEL_KPIS;
 return ADMIN_INDIVIDUAL_KPIS;
 }
 
+function getIndividualMax(person){
+const kpis=getKPIsForPerson(person);
+if(kpis.length===0)return 0;
+let max=0;kpis.forEach(k=>{max+=(k.max||0);});return max;
+}
+
 function getKPIDisplayName(kpi,month){
 if(month<='2026-05'&&kpi.oldName)return kpi.oldName;
 return kpi.name;
@@ -477,8 +483,9 @@ const adminPool=getAdminTeamTotal(currentMonth);
 let totalPayout=0;
 ALL_MEMBERS.forEach(p=>{totalPayout+=getFinalBonus(currentMonth,p);});
 const bonuses=ALL_MEMBERS.map(p=>({name:p,bonus:getFinalBonus(currentMonth,p)})).sort((a,b)=>b.bonus-a.bonus);
-const topP=bonuses[0];
-const lowP=bonuses[bonuses.length-1];
+const eligibleBonuses=bonuses.filter(b=>!DUAL_TEAM_MEMBERS.includes(b.name));
+const topP=eligibleBonuses[0];
+const lowP=eligibleBonuses[eligibleBonuses.length-1];
 let h='<div class="stats-grid">';
 h+='<div class="stat-card"><div class="label">CC Team Pool (Net)</div><div class="value">'+fmt(ccPool)+'</div><div class="sub">After deductions</div></div>';
 h+='<div class="stat-card"><div class="label">Admin Team Pool</div><div class="value">'+fmt(adminPool)+'</div><div class="sub">Total admin bonus</div></div>';
@@ -527,7 +534,7 @@ h+='<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">';
 h+='<input id="dedDesc" placeholder="Description" style="flex:2;min-width:200px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
 h+='<input id="dedAmt" type="number" placeholder="Amount" style="width:100px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
 h+='<select id="dedPerson" style="width:140px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
-[...CC_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+CC_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
 h+='</select>';
 h+='<button class="btn btn-gold btn-sm" onclick="addDeduction()"><i class="fas fa-plus"></i> Add</button>';
 h+='</div></div>';
@@ -687,16 +694,16 @@ h+='</div>';
 h+='<div class="form-section"><h3>Top/Low Performer Assignment</h3>';
 h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">';
 h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Top Performer</label><select onchange="updatePerformer(\'topPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
-[...CC_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
+CC_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
 h+='</select></div>';
 h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
-[...CC_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
+CC_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
 h+='</select></div>';
 h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Top Performer</label><select onchange="updatePerformer(\'topPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
-[...ADMIN_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
+ADMIN_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.topPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
 h+='</select></div>';
 h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
-[...ADMIN_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
+ADMIN_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
 h+='</select></div></div></div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveIndividual()"><i class="fas fa-save"></i> Save</button></div>';
 document.getElementById('content').innerHTML=h;
@@ -725,10 +732,16 @@ const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 let h='<div class="form-section"><h3><i class="fas fa-file-invoice-dollar"></i> Complete Bonus Summary - '+MONTHS.find(m=>m.key===currentMonth).label+'</h3>';
 h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">';
-h+='<div class="summary-box"><h4>CC Team Pool</h4><div class="row"><span>Gross</span><span class="val">'+fmt(getCCTeamTotal(currentMonth))+'</span></div><div class="row"><span>Net (after deductions)</span><span class="val">'+fmt(ccNet)+'</span></div><div class="row"><span>Per member ('+ccCount+')</span><span class="val">'+fmt(ccNet/ccCount)+'</span></div></div>';
-h+='<div class="summary-box"><h4>Admin Team Pool</h4><div class="row"><span>Total</span><span class="val">'+fmt(adminTotal)+'</span></div><div class="row"><span>Per member ('+adminCount+')</span><span class="val">'+fmt(adminTotal/adminCount)+'</span></div></div>';
+const ccGross=getCCTeamTotal(currentMonth);
+const ccMaxPool=CC_TEAM_KPIS_NEW.reduce((s,k)=>{if(k.type==='tier')return s+k.tiers[0].val;if(k.type==='select')return s+Math.max(...k.options.map(o=>o.val));return s;},0);
+const adminKpis=getAdminTeamKPIs(currentMonth);
+const adminMaxPool=adminKpis.reduce((s,k)=>{if(k.type==='tier')return s+k.tiers[0].val;if(k.type==='select')return s+Math.max(...k.options.map(o=>o.val));if(k.type==='per_unit')return s;return s;},0);
+const ccAttain=ccMaxPool>0?Math.min((ccGross/ccMaxPool*100),100).toFixed(1):'N/A';
+const adminAttain=adminMaxPool>0?Math.min((adminTotal/adminMaxPool*100),100).toFixed(1):'N/A';
+h+='<div class="summary-box"><h4>CC Team Pool</h4><div class="row"><span>Gross</span><span class="val">'+fmt(ccGross)+'</span></div><div class="row"><span>Net (after deductions)</span><span class="val">'+fmt(ccNet)+'</span></div><div class="row"><span>Per member ('+ccCount+')</span><span class="val">'+fmt(ccNet/ccCount)+'</span></div><div class="row"><span>Pool Attainment</span><span class="val" style="color:'+(parseFloat(ccAttain)>=80?'#4caf50':parseFloat(ccAttain)>=50?'#ff9800':'var(--danger)')+';">'+ccAttain+'%</span></div></div>';
+h+='<div class="summary-box"><h4>Admin Team Pool</h4><div class="row"><span>Total</span><span class="val">'+fmt(adminTotal)+'</span></div><div class="row"><span>Per member ('+adminCount+')</span><span class="val">'+fmt(adminTotal/adminCount)+'</span></div><div class="row"><span>Pool Attainment</span><span class="val" style="color:'+(parseFloat(adminAttain)>=80?'#4caf50':parseFloat(adminAttain)>=50?'#ff9800':'var(--danger)')+';">'+adminAttain+'%</span></div></div>';
 h+='</div>';
-h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual $</th><th>Tow Ded</th><th>Team Share</th><th>Low Ded %</th><th>Top Bonus</th><th>Final Bonus</th></tr></thead><tbody>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Individual $</th><th>Attainment</th><th>Tow Ded</th><th>Team Share</th><th>Low Ded %</th><th>Top Bonus</th><th>Final Bonus</th></tr></thead><tbody>';
 let grandTotal=0;
 ALL_MEMBERS.forEach(p=>{
 const indTotal=getIndividualTotal(currentMonth,p);
@@ -752,7 +765,11 @@ const isLow=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||
 h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
 h+='<td>'+p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
 h+='<td>'+(team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin')+'</td>';
+const indMax=getIndividualMax(p);
+const indAttain=indMax>0?(indTotal/indMax*100).toFixed(1)+'%':'N/A';
+const attainColor=indMax>0?(indTotal/indMax>=0.8?'#4caf50':indTotal/indMax>=0.5?'#ff9800':'var(--danger)'):'var(--text-muted)';
 h+='<td>'+fmt(indTotal)+'</td>';
+h+='<td style="color:'+attainColor+';font-weight:600;">'+indAttain+'</td>';
 h+='<td style="color:'+(towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">'+(towDedAmt>0?'-'+fmt(towDedAmt):'-')+'</td>';
 h+='<td>'+fmt(teamShare)+'</td>';
 h+='<td>'+(lowDed*100)+'%</td>';
@@ -760,7 +777,7 @@ h+='<td>'+fmt(topBonus)+'</td>';
 h+='<td style="font-weight:700;color:var(--gold);">'+fmt(final_)+'</td>';
 h+='</tr>';
 });
-h+='</tbody><tfoot><tr><td colspan="7" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
+h+='</tbody><tfoot><tr><td colspan="8" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="printSummary()"><i class="fas fa-print"></i> Print</button><button class="btn btn-info" onclick="exportSummary()"><i class="fas fa-download"></i> Export</button></div>';
 document.getElementById('content').innerHTML=h;
 }
