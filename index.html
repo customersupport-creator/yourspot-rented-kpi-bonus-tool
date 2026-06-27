@@ -294,6 +294,104 @@ const ADMIN_INDIVIDUAL_KPIS=[
 {id:'a_tow_assign',name:'Towing Company Assignment',weight:20,max:10,unit:'company',attainType:'count'}
 ];
 
+// Individual KPI tier lookup tables (June 2026+ structure)
+// type:'gte' = higher is better (count, pct), 'lte' = lower is better (FRT avg)
+// tiers: [[threshold, dollarValue], ...] sorted desc for gte, asc for lte
+const IND_TIERS={
+Gwen:{
+tow_coord:{type:'gte',tiers:[[4,10],[3,8],[2,6],[1,3],[0,0]]},
+listing_res:{type:'gte',tiers:[[6,10],[3,8],[1,5],[0,0]]},
+avg_response:{type:'lte',tiers:[[3,5],[4,4],[5,3],[99,0]]},
+resolution_rate:{type:'gte',tiers:[[95,5],[85,4],[70,3],[50,2],[0,0]]},
+tow_invest:{type:'gte',tiers:[[4,7.50],[2,6],[1,3.75],[0,0]]}
+},
+Angel:{
+tow_coord:{type:'gte',tiers:[[5,10],[4,8],[2,6],[1,3],[0,0]]},
+listing_res:{type:'gte',tiers:[[6,10],[3,8],[1,5],[0,0]]},
+avg_response:{type:'lte',tiers:[[3,7.50],[4,6],[5,3.75],[99,0]]},
+resolution_rate:{type:'gte',tiers:[[95,7.50],[90,6],[85,5],[80,4],[75,3],[70,2],[0,0]]},
+tow_invest:{type:'gte',tiers:[[5,10],[3,8],[2,6],[1,5],[0,0]]},
+tracking_sheet:{type:'gte',tiers:[[4,7.50],[3,5.63],[2,3.75],[1,1.88],[0,0]]}
+},
+Christine:{
+tow_coord:{type:'gte',tiers:[[6,10],[5,8],[3,6],[1,3],[0,0]]},
+listing_res:{type:'gte',tiers:[[7,15],[4,12],[2,7.50],[1,3.75],[0,0]]},
+avg_response:{type:'lte',tiers:[[3,7.50],[4,6],[5,3.75],[99,0]]},
+resolution_rate:{type:'gte',tiers:[[95,7.50],[90,6],[85,5],[80,4],[75,3],[70,2],[0,0]]},
+tow_invest:{type:'gte',tiers:[[5,10],[3,8],[2,6],[1,5],[0,0]]}
+},
+Donita:{
+tow_coord:{type:'gte',tiers:[[6,10],[5,8],[3,6],[1,3],[0,0]]},
+listing_res:{type:'gte',tiers:[[7,15],[4,12],[2,7.50],[1,3.75],[0,0]]},
+avg_response:{type:'lte',tiers:[[3,7.50],[4,6],[5,3.75],[99,0]]},
+resolution_rate:{type:'gte',tiers:[[95,7.50],[90,6],[85,5],[80,4],[75,3],[70,2],[0,0]]},
+tow_invest:{type:'gte',tiers:[[5,10],[3,8],[2,6],[1,5],[0,0]]}
+},
+Michael:{
+tow_coord:{type:'gte',tiers:[[5,10],[4,8],[2,6],[1,3],[0,0]]},
+listing_res:{type:'gte',tiers:[[6,10],[3,8],[1,5],[0,0]]},
+avg_response:{type:'lte',tiers:[[3,7.50],[4,6],[5,3.75],[99,0]]},
+resolution_rate:{type:'gte',tiers:[[95,7.50],[90,6],[85,5],[80,4],[75,3],[70,2],[0,0]]},
+tow_invest:{type:'gte',tiers:[[5,10],[3,8],[2,6],[1,5],[0,0]]},
+tracking_sheet:{type:'gte',tiers:[[4,7.50],[3,5.63],[2,3.75],[1,1.88],[0,0]]}
+},
+Joan:{
+a_weekly:{type:'gte',tiers:[[4,5],[3,3.75],[2,2.50],[1,1.25],[0,0]]},
+a_listing:{type:'gte',tiers:[[10,7.50],[5,6],[0,0]]},
+a_facility_audit:{type:'gte',tiers:[[80,5],[60,4],[50,2.50],[0,0]]},
+a_facility_action:{type:'gte',tiers:[[10,10],[5,8],[2,5],[0,0]]},
+a_tow_assign:{type:'gte',tiers:[[6,5],[3,4],[1,2.50],[0,0]]}
+},
+Lovely:{
+a_daily_task:{type:'gte',tiers:[[90,5],[80,4],[50,2.50],[0,0]]},
+a_listing:{type:'gte',tiers:[[15,10],[10,8],[6,5],[0,0]]},
+a_facility_audit:{type:'gte',tiers:[[80,5],[60,4],[50,2.50],[0,0]]},
+a_facility_action:{type:'gte',tiers:[[10,10],[5,8],[2,5],[0,0]]},
+a_tow_assign:{type:'gte',tiers:[[8,10],[6,8],[2,5],[0,0]]}
+},
+Jian:{
+a_daily_task:{type:'gte',tiers:[[90,5],[80,4],[50,2.50],[0,0]]},
+a_listing:{type:'gte',tiers:[[15,10],[10,8],[6,5],[0,0]]},
+a_facility_audit:{type:'gte',tiers:[[80,5],[60,4],[50,2.50],[0,0]]},
+a_facility_action:{type:'gte',tiers:[[10,10],[5,8],[2,5],[0,0]]},
+a_tow_assign:{type:'gte',tiers:[[8,10],[6,8],[2,5],[0,0]]}
+},
+Hazel:{
+h_resolution:{type:'gte',tiers:[[10,10],[5,8],[2,5],[0,0]]},
+h_team_perf:{type:'gte',tiers:[[90,10],[80,8],[70,5],[0,0]]},
+h_coaching_imp:{type:'gte',tiers:[[8,15],[4,7.50],[0,0]]},
+h_process_imp:{type:'gte',tiers:[[2,15],[1,7.50],[0,0]]}
+}
+};
+function calcIndTierDollar(person,kpiId,attainment,kpi){
+if(kpi.attainType==='binary')return attainment>0?kpi.max:0;
+const pt=IND_TIERS[person];
+if(!pt||!pt[kpiId])return null;
+const t=pt[kpiId];const v=parseFloat(attainment)||0;
+if(t.type==='lte'){for(const[thresh,dollar]of t.tiers){if(v<=thresh)return dollar;}return 0;}
+else{for(const[thresh,dollar]of t.tiers){if(v>=thresh)return dollar;}return 0;}
+}
+function getMonthlyAttainFromWeekly(person,kpiId,kpi,d,weeks){
+const key=person+'_'+kpiId;const wd=d.weeklyInd[key]||{};
+const vals=weeks.map(w=>parseFloat(wd[w.id])||0);
+const filled=vals.filter(v=>v>0);
+if(filled.length===0)return null;
+if(kpi.attainType==='avg')return filled.reduce((a,b)=>a+b,0)/filled.length;
+if(kpi.attainType==='pct'){let last=null;weeks.forEach(w=>{const v=parseFloat(wd[w.id]);if(v>0)last=v;});return last;}
+return vals.reduce((a,b)=>a+b,0);
+}
+function autoCalcIndDollar(person,kpiId){
+const d=getMonthData(currentMonth);const key=person+'_'+kpiId;const oKey='ind_'+key;
+if(d.weeklyOverrides&&d.weeklyOverrides[oKey])return;
+const kpi=(getKPIsForPerson(person)||[]).find(k=>k.id===kpiId);
+if(!kpi)return;
+const weeks=getWeekRanges(currentMonth);
+const attain=getMonthlyAttainFromWeekly(person,kpiId,kpi,d,weeks);
+if(attain===null)return;
+const dollar=calcIndTierDollar(person,kpiId,attain,kpi);
+if(dollar!==null){if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId]=dollar;}
+}
+
 function getKPIsForPerson(p){
 if(p==='Kenan')return[];
 if(p==='Hazel')return HAZEL_KPIS;
@@ -351,7 +449,7 @@ let sum=0;weeks.forEach(w=>{sum+=parseFloat((weeklyObj[kpiId]||{})[w.id])||0;});
 }
 function updateWeeklyCC(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyCC[kpiId])d.weeklyCC[kpiId]={};d.weeklyCC[kpiId][weekId]=val;if(!d.weeklyOverrides['cc_'+kpiId]){d.cc_team[kpiId]=getWeeklySum(d.weeklyCC,kpiId,getWeekRanges(currentMonth));}}
 function updateWeeklyAdmin(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.weeklyAdmin[kpiId])d.weeklyAdmin[kpiId]={};d.weeklyAdmin[kpiId][weekId]=val;if(!d.weeklyOverrides['admin_'+kpiId]){d.admin_team[kpiId]=getWeeklySum(d.weeklyAdmin,kpiId,getWeekRanges(currentMonth));}}
-function updateWeeklyInd(person,kpiId,weekId,val){const d=getMonthData(currentMonth);const key=person+'_'+kpiId;if(!d.weeklyInd[key])d.weeklyInd[key]={};d.weeklyInd[key][weekId]=val;}
+function updateWeeklyInd(person,kpiId,weekId,val){const d=getMonthData(currentMonth);const key=person+'_'+kpiId;if(!d.weeklyInd[key])d.weeklyInd[key]={};d.weeklyInd[key][weekId]=val;autoCalcIndDollar(person,kpiId);}
 function toggleWeeklyOverride(type,kpiId,isOverride){const d=getMonthData(currentMonth);d.weeklyOverrides[type+'_'+kpiId]=isOverride;saveData();}
 let expandedWeekly={};
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
@@ -731,7 +829,8 @@ const wKey='ind_'+indKey;
 const isExpanded=expandedWeekly[wKey];
 h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+displayName+(kpi.weight?' <span style="color:var(--text-muted);font-size:11px;">('+kpi.weight+'%, max $'+kpi.max+')</span>':'<span style="color:var(--text-muted);font-size:11px;">(max $'+kpi.max+')</span>')+'</label>';
-h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'ind\',\''+indKey+'\',true);" style="width:80px;"'+(isOverride?' title="Manual override active"':'')+'>';
+h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'ind\',\''+indKey+'\',true);saveData();renderIndividual();" style="width:80px;'+(isOverride?'border-color:var(--warning);':'border-color:var(--success);')+'"'+(isOverride?' title="Manual override — click ↺ to use auto-calc"':' title="Auto-calculated from weekly attainment"')+'>';
+if(isOverride){h+='<button class="btn btn-sm" style="padding:2px 6px;font-size:10px;background:var(--navy-light);color:var(--warning);border:1px solid var(--warning);cursor:pointer;" onclick="toggleWeeklyOverride(\'ind\',\''+indKey+'\',false);autoCalcIndDollar(\''+currentIndPerson+'\',\''+kpi.id+'\');saveData();renderIndividual();" title="Reset to auto-calculated value">↺</button>';}
 h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:150px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
 const indUnit=kpi.unit||'unit';
 const indAttainType=kpi.attainType||'count';
@@ -750,7 +849,10 @@ let indSummary='';
 if(indAttainType==='avg'&&indWkCount>0){indSummary='Avg: '+(indWkTotal/indWkCount).toFixed(1)+' '+indUnit;}
 else if(indAttainType==='pct'){indSummary='Latest: '+(function(){let last='';weeks.forEach(w=>{const v=(d.weeklyInd[indKey]||{})[w.id];if(v)last=v;});return last||'—';})()+' '+indUnit;}
 else{indSummary='Total: '+indWkTotal+' '+indUnit+(indWkTotal!==1?'s':'');}
-h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">'+indSummary+'</div></div>';
+const indMonthAttain=getMonthlyAttainFromWeekly(currentIndPerson,kpi.id,kpi,d,weeks);
+const indTierDollar=indMonthAttain!==null?calcIndTierDollar(currentIndPerson,kpi.id,indMonthAttain,kpi):null;
+const indDollarStr=indTierDollar!==null?' <span style="color:'+(isOverride?'var(--text-muted)':'var(--success)')+';margin-left:8px;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> $'+indTierDollar.toFixed(2)+(isOverride?' (auto)':'')+'</span>':'';
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">'+indSummary+indDollarStr+'</div></div>';
 }
 h+='</div>';
 });
