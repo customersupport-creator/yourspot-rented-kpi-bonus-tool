@@ -189,7 +189,7 @@ const ADMIN_TEAM_KPIS_NEW=[
 {id:'revision',name:'Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
 {id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
-{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
 {id:'parkpliant_admin',name:'Parkpliant Payments',type:'per_unit',rate:10,unit:'payment'},
 {id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
 ];
@@ -200,7 +200,7 @@ const ADMIN_TEAM_KPIS_OLD=[
 {id:'inventory',name:'Platform Inventory Management',type:'tier',tiers:[{min:98,max:100,val:30},{min:95,max:97,val:15},{min:0,max:94,val:0}],unit:'% accuracy'},
 {id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:80,max:84,val:10},{min:0,max:79,val:0}],unit:'%'},
-{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
 {id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
 ];
 
@@ -211,7 +211,7 @@ const ADMIN_TEAM_KPIS_MAY=[
 {id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
 {id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
-{id:'tow_assign',name:'Towing Company Assignment',type:'select',options:[{label:'Fully onboarded',val:5},{label:'New company',val:20},{label:'None',val:0}]},
+{id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
 {id:'parkpliant_admin',name:'Parkpliant Payments',type:'per_unit',rate:10,unit:'payment'},
 {id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
 ];
@@ -473,6 +473,7 @@ if(val===''||val===null||val===undefined)return 0;
 if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
 if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
 if(kpi.type==='select')return parseFloat(val)||0;
+if(kpi.type==='multi_rate'){if(!val)return 0;if(typeof val!=='object')return parseFloat(val)||0;let t=0;kpi.rates.forEach(r=>{t+=(parseFloat(val[r.id])||0)*r.rate;});return t;}
 return 0;
 }
 
@@ -758,9 +759,23 @@ const calc=calcAdminTeamKPI(kpi,val);
 const wKey='admin_'+kpi.id;
 const isExpanded=expandedWeekly[wKey];
 const isDropdown=kpi.type==='select';
+const isMultiRate=kpi.type==='multi_rate';
 h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+'</label>';
-if(isDropdown){
+if(isMultiRate){
+const mrVal=typeof val==='object'&&val?val:{};
+h+='<div style="display:flex;flex-direction:column;gap:6px;">';
+kpi.rates.forEach(r=>{
+const rv=mrVal[r.id]||'';
+const rTotal=(parseFloat(rv)||0)*r.rate;
+h+='<div style="display:flex;align-items:center;gap:8px;">';
+h+='<span style="font-size:13px;color:var(--text);min-width:180px;">'+r.label+' ($'+r.rate+'/ea)</span>';
+h+='<input type="number" value="'+rv+'" placeholder="0" min="0" style="width:70px;" onchange="updateAdminMultiRate(\''+kpi.id+'\',\''+r.id+'\',this.value);">';
+h+='<span style="font-size:12px;color:var(--text-muted);">= '+fmt(rTotal)+'</span>';
+h+='</div>';
+});
+h+='</div>';
+}else if(isDropdown){
 h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);">';
 h+='<option value="">-- Select --</option>';
 kpi.options.forEach(o=>{h+='<option value="'+o.val+'"'+(parseFloat(val)===o.val?' selected':'')+'>'+o.label+' ($'+o.val+')</option>';});
@@ -769,11 +784,11 @@ h+='</select>';
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
 h+='<span class="kpi-value">'+fmt(calc)+'</span>';
-if(!isDropdown){
+if(!isDropdown&&!isMultiRate){
 h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderAdminTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
 if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.admin_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyAdmin,\''+kpi.id+'\',getWeekRanges(currentMonth));renderAdminTeam();" title="Reset to weekly sum">Reset</button>';
 }
-if(isExpanded&&!isDropdown){
+if(isExpanded&&!isDropdown&&!isMultiRate){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
 h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
@@ -802,6 +817,7 @@ document.getElementById('content').innerHTML=h;
 }
 
 function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team[id]=val;}
+function updateAdminMultiRate(kpiId,rateId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][rateId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateAdminOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
 function saveAdminTeam(){saveData();renderAdminTeam();toast('Admin Team KPI saved');}
 
