@@ -416,7 +416,8 @@ return kpi.name;
 }
 
 function loadData(){try{data=JSON.parse(localStorage.getItem('ysrkpi_data'))||{};}catch(e){data={};}}
-async function loadDataFromServer(){for(let attempt=0;attempt<3;attempt++){try{const r=await fetch('/api/data');if(r.ok){const sd=await r.json();if(sd&&Object.keys(sd).length>0){data=sd;localStorage.setItem('ysrkpi_data',JSON.stringify(data));return true;}return false;}}catch(e){console.warn('Server load attempt '+(attempt+1)+' failed:',e);if(attempt<2)await new Promise(ok=>setTimeout(ok,3000));}}return false;}
+function monthHasData(m){return m&&m.individual&&Object.keys(m.individual).length>0&&Object.values(m.individual).some(v=>typeof v==='object'&&Object.keys(v).length>0);}
+async function loadDataFromServer(){const localData=JSON.parse(JSON.stringify(data));for(let attempt=0;attempt<3;attempt++){try{const r=await fetch('/api/data');if(r.ok){const sd=await r.json();if(sd&&Object.keys(sd).length>0){data=sd;for(const mk of Object.keys(localData)){if(monthHasData(localData[mk])&&!monthHasData(sd[mk])){data[mk]=localData[mk];}}localStorage.setItem('ysrkpi_data',JSON.stringify(data));return true;}return false;}}catch(e){console.warn('Server load attempt '+(attempt+1)+' failed:',e);if(attempt<2)await new Promise(ok=>setTimeout(ok,3000));}}return false;}
 let _saveTimer=null;
 function saveData(){localStorage.setItem('ysrkpi_data',JSON.stringify(data));if(_saveTimer)clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>{fetch('/api/data',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>{if(!r.ok)console.warn('Server save failed:',r.status);}).catch(e=>console.warn('Server save error:',e));},1000);}
 function getMonthData(m){
@@ -1858,8 +1859,8 @@ adminMemberCount:monthData.adminMemberCount
 seeded=true;
 }
 }
-// Only save to server if server load succeeded (prevents overwriting good data)
-if(serverLoaded&&seeded){saveData();}
+// Save merged data back to server if server was reachable
+if(serverLoaded){saveData();}
 else if(seeded){localStorage.setItem('ysrkpi_data',JSON.stringify(data));}
 const sel=document.getElementById('monthSelect');
 MONTHS.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label;sel.appendChild(o);});
