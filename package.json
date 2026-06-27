@@ -1,0 +1,15 @@
+{
+  "name": "yourspot-rented-kpi-bonus-tool",
+  "version": "1.0.0",
+  "description": "KPI Bonus Tracking Tool with Airtable backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
