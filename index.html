@@ -185,7 +185,7 @@ const ADMIN_TEAM_KPIS_NEW=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
 {id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
-{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',nlBonus:30,revBonus:30,threshold:95},
+{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',bonus:30,threshold:95},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
 {id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
 {id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
@@ -197,7 +197,7 @@ const ADMIN_TEAM_KPIS_OLD=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
 {id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'tier',tiers:[{min:98,max:100,val:30},{min:95,max:97,val:15},{min:0,max:94,val:0}],unit:'% accuracy'},
-{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',nlBonus:30,revBonus:30,threshold:95},
+{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',bonus:30,threshold:95},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:80,max:84,val:10},{min:0,max:79,val:0}],unit:'%'},
 {id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
 {id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
@@ -207,7 +207,7 @@ const ADMIN_TEAM_KPIS_MAY=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
 {id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
-{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',nlBonus:30,revBonus:30,threshold:95},
+{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',bonus:30,threshold:95},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
 {id:'facility_action',name:'Facility Auditing Action',type:'per_unit',rate:3,unit:'issue resolved'},
 {id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
@@ -506,7 +506,7 @@ function calcAdminTeamKPI(kpi,val){
 if(val===''||val===null||val===undefined)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
-if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;let t=0;if(sc.nlPct>=kpi.threshold)t+=kpi.nlBonus;if(sc.revPct>=kpi.threshold)t+=kpi.revBonus;return t;}
+if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
 if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
 if(kpi.type==='select')return parseFloat(val)||0;
@@ -843,8 +843,8 @@ const revC2=sc.revPct>=95?'#4CAF50':sc.revPct>=90?'#FF9800':'#f44336';
 h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
 h+='<div style="font-weight:600;color:var(--gold);margin-bottom:6px;">Monthly Totals ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+')</div>';
 h+='<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px;">';
-h+='<span>New Listings: <strong>'+sc.nlUpdated+'/'+sc.nlTotal+'</strong> = <strong style="color:'+nlC2+';">'+sc.nlPct.toFixed(2)+'%</strong>'+(sc.nlPct>=95?' → <span style="color:var(--gold);">$'+kpi.nlBonus+'</span>':' → <span style="color:var(--text-muted);">$0</span>')+'</span>';
-h+='<span>Revisions: <strong>'+sc.revUpdated+'/'+sc.revTotal+'</strong> = <strong style="color:'+revC2+';">'+sc.revPct.toFixed(2)+'%</strong>'+(sc.revPct>=95?' → <span style="color:var(--gold);">$'+kpi.revBonus+'</span>':' → <span style="color:var(--text-muted);">$0</span>')+'</span>';
+h+='<span>New Listings: <strong>'+sc.nlUpdated+'/'+sc.nlTotal+'</strong> = <strong style="color:'+nlC2+';">'+sc.nlPct.toFixed(2)+'%</strong> '+(sc.nlPct>=95?'<span style="color:#4CAF50;">✓</span>':'<span style="color:#f44336;">✗</span>')+'</span>';
+h+='<span>Revisions: <strong>'+sc.revUpdated+'/'+sc.revTotal+'</strong> = <strong style="color:'+revC2+';">'+sc.revPct.toFixed(2)+'%</strong> '+(sc.revPct>=95?'<span style="color:#4CAF50;">✓</span>':'<span style="color:#f44336;">✗</span>')+'</span>';
 h+='</div>';
 h+='<div style="font-weight:600;">Total: <span style="color:var(--gold);font-size:14px;">'+fmt(calc)+'</span></div>';
 h+='</div>';}
@@ -1167,7 +1167,7 @@ const val=raw[kpi.id];
 if(val===undefined||val===''||val===null)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
-if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;let t=0;if(sc.nlPct>=kpi.threshold)t+=kpi.nlBonus;if(sc.revPct>=kpi.threshold)t+=kpi.revBonus;return t;}
+if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit')return parseFloat(val)||0;
 if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
 if(kpi.type==='tier_time'){return parseFloat(val)||0;}
