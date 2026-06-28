@@ -183,7 +183,7 @@ return CC_TEAM_KPIS_NEW;
 
 const ADMIN_TEAM_KPIS_NEW=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
-{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
 {id:'new_listing',name:'New Listing Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'revision',name:'Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
@@ -196,7 +196,7 @@ const ADMIN_TEAM_KPIS_NEW=[
 
 const ADMIN_TEAM_KPIS_OLD=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
-{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'tier',tiers:[{min:98,max:100,val:30},{min:95,max:97,val:15},{min:0,max:94,val:0}],unit:'% accuracy'},
 {id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:80,max:84,val:10},{min:0,max:79,val:0}],unit:'%'},
@@ -206,7 +206,7 @@ const ADMIN_TEAM_KPIS_OLD=[
 
 const ADMIN_TEAM_KPIS_MAY=[
 {id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:95,max:100,val:30},{min:90,max:94,val:15},{min:0,max:89,val:0}]},
-{id:'daily_task',name:'Daily Task Monitoring',type:'tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
+{id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:20},{min:90,max:94,val:10},{min:0,max:89,val:0}],unit:'%'},
 {id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero critical errors',val:30},{label:'Minor errors (<=10)',val:15},{label:'Critical errors',val:0}]},
 {id:'new_listing',name:'New Listing & Revision Management',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94,val:0}],unit:'% within 24h'},
 {id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:90,max:100,val:30},{min:85,max:89,val:15},{min:0,max:84,val:0}],unit:'%'},
@@ -482,9 +482,19 @@ const avgMiss=missPcts.reduce((a,b)=>a+b,0)/missPcts.length;
 const overall=(avgAck+avgComp+(100-avgMiss))/3;
 return{ackPct:avgAck,compPct:avgComp,missPct:avgMiss,overall:overall,weekCount:ackPcts.length};}
 
+function calcWeeklyAvgScore(val){
+if(!val||typeof val!=='object')return{avg:0,weekCount:0,weeks:[]};
+const wks=Object.keys(val).filter(k=>k.startsWith('w'));
+let pcts=[];
+wks.forEach(w=>{const v=parseFloat(val[w]);if(!isNaN(v)&&v>0)pcts.push(v);});
+if(pcts.length===0)return{avg:0,weekCount:0,weeks:[]};
+const avg=pcts.reduce((a,b)=>a+b,0)/pcts.length;
+return{avg:avg,weekCount:pcts.length,weeks:pcts};}
+
 function calcAdminTeamKPI(kpi,val){
 if(val===''||val===null||val===undefined)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
 if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
 if(kpi.type==='select')return parseFloat(val)||0;
@@ -776,9 +786,30 @@ const isExpanded=expandedWeekly[wKey];
 const isDropdown=kpi.type==='select';
 const isMultiRate=kpi.type==='multi_rate';
 const isEndorsement=kpi.type==='endorsement_detail';
+const isWeeklyAvg=kpi.type==='weekly_avg_tier';
 h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+'</label>';
-if(isEndorsement){
+if(isWeeklyAvg){
+const waVal=typeof val==='object'&&val?val:{};
+const sc=calcWeeklyAvgScore(waVal);
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='<div style="width:100%;margin-top:8px;padding:12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly % Breakdown</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=waVal[w.id]||'';
+const wParsed=parseFloat(wVal);
+const wColor=!isNaN(wParsed)&&wParsed>0?(wParsed>=95?'#4CAF50':wParsed>=90?'#FF9800':'#f44336'):'var(--text-muted)';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:120px;">'+w.label+'</span><input type="number" min="0" max="100" step="0.01" value="'+wVal+'" placeholder="%" style="width:65px;font-size:12px;padding:4px 6px;text-align:center;" onchange="updateWeeklyAvgDetail(\''+kpi.id+'\',\''+w.id+'\',this.value)"><span style="font-size:11px;color:'+wColor+';font-weight:600;">'+(!isNaN(wParsed)&&wParsed>0?wParsed.toFixed(2)+'%':'-')+'</span></div>';
+});
+h+='</div>';
+if(sc.weekCount>0){
+const avgC=sc.avg>=95?'#4CAF50':sc.avg>=90?'#FF9800':'#f44336';
+h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
+h+='<div style="font-weight:600;">Monthly Average ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+'): <span style="color:'+avgC+';font-size:14px;">'+sc.avg.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
+h+='</div>';}
+h+='</div>';
+}else if(isEndorsement){
 const eVal=typeof val==='object'&&val?val:{};
 const sc=calcEndorsementScore(eVal);
 h+='<span class="kpi-value">'+fmt(calc)+'</span>';
@@ -855,12 +886,12 @@ h+='</select>';
 }else{
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
-if(!isEndorsement) h+='<span class="kpi-value">'+fmt(calc)+'</span>';
-if(!isDropdown&&!isMultiRate&&!isEndorsement){
+if(!isEndorsement&&!isWeeklyAvg) h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+if(!isDropdown&&!isMultiRate&&!isEndorsement&&!isWeeklyAvg){
 h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderAdminTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
 if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.admin_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyAdmin,\''+kpi.id+'\',getWeekRanges(currentMonth));renderAdminTeam();" title="Reset to weekly sum">Reset</button>';
 }
-if(isExpanded&&!isDropdown&&!isMultiRate&&!isEndorsement){
+if(isExpanded&&!isDropdown&&!isMultiRate&&!isEndorsement&&!isWeeklyAvg){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
 h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
@@ -891,6 +922,7 @@ document.getElementById('content').innerHTML=h;
 function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team[id]=val;}
 function updateAdminMultiRate(kpiId,rateId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][rateId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateEndorsementDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.endorsements||typeof d.admin_team.endorsements!=='object')d.admin_team.endorsements={};if(!d.admin_team.endorsements[weekId])d.admin_team.endorsements[weekId]={};d.admin_team.endorsements[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateWeeklyAvgDetail(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][weekId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateAdminOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
 function saveAdminTeam(){saveData();renderAdminTeam();toast('Admin Team KPI saved');}
 
@@ -1073,6 +1105,7 @@ const raw=d[teamKey]||{};
 const val=raw[kpi.id];
 if(val===undefined||val===''||val===null)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='per_unit')return parseFloat(val)||0;
 if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
 if(kpi.type==='tier_time'){return parseFloat(val)||0;}
@@ -1083,6 +1116,7 @@ function getTeamAttainment(kpi,raw){
 const val=raw[kpi.id];
 if(val===undefined||val===''||val===null)return '';
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return '';return 'Ack: '+sc.ackPct.toFixed(1)+'% | Comp: '+sc.compPct.toFixed(1)+'% | Overall: '+sc.overall.toFixed(1)+'%';}
+if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return '';return 'Avg: '+sc.avg.toFixed(1)+'%';}
 if(kpi.type==='multi_rate'){if(typeof val==='object'&&val){let parts=[];Object.entries(val).forEach(([k,v])=>{if(v)parts.push(k+': '+v);});return parts.join(', ')||'';}return '';}
 const n=parseFloat(val);
 if(isNaN(n))return String(val);
@@ -1289,7 +1323,7 @@ const kpis=getKPIsForPerson(p);let attainParts=[];
 kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
 h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
 });
-let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{if(k.type==='endorsement_detail'){const eVal=d.admin_team.endorsements;if(eVal&&typeof eVal==='object'){const wd=eVal[w.id];if(wd&&wd.total>0){const t=parseFloat(wd.total),c=parseFloat(wd.completed)||0;const pct=(c/t*100).toFixed(1);adParts.push(t+' endors ('+pct+'%)');}}return;}const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
+let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{if(k.type==='endorsement_detail'){const eVal=d.admin_team.endorsements;if(eVal&&typeof eVal==='object'){const wd=eVal[w.id];if(wd&&wd.total>0){const t=parseFloat(wd.total),c=parseFloat(wd.completed)||0;const pct=(c/t*100).toFixed(1);adParts.push(t+' endors ('+pct+'%)');}}return;}if(k.type==='weekly_avg_tier'){const waVal=d.admin_team[k.id];if(waVal&&typeof waVal==='object'){const wv=parseFloat(waVal[w.id]);if(!isNaN(wv)&&wv>0)adParts.push(k.name+': '+wv.toFixed(1)+'%');}return;}const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
 h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+adParts.join(', ')+'">'+(adParts.length>0?adParts.join(', '):'—')+'</td>';
 h+='</tr>';
 });
