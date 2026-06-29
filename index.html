@@ -600,7 +600,8 @@ scored.sort((a,b)=>b.score-a.score);
 const eligible=scored.filter(x=>!x.disqualified);
 const top=(eligible.length>0)?eligible[0].person:'';
 scored.sort((a,b)=>a.score-b.score);
-const low=scored[0]?scored[0].person:'';
+let low='';
+if(scored[0]){const maxKPI=getKPIsForPerson(scored[0].person).reduce((s,k)=>s+k.max,0);const pct=maxKPI>0?(scored[0].score/maxKPI)*100:0;if(pct<85)low=scored[0].person;}
 return{top,low};
 }
 const ccRank=getTeamRanking(CC_MEMBERS,'cc');
