@@ -1879,12 +1879,12 @@ if(idx>=0){sched.splice(idx,1);data._coachingSched=sched;saveData();renderSchedu
 function formatSchedDate(d){
 if(!d)return'-';
 const dt=new Date(d+'T00:00:00');
-return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',weekday:'short'});
+return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',weekday:'short',timeZone:'America/Chicago'});
 }
 
 function renderSchedule(){
 const sched=getScheduleData();
-const today=new Date().toISOString().slice(0,10);
+const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
 const upcoming=sched.filter(s=>s.status==='Scheduled'&&s.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
 const overdue=sched.filter(s=>s.status==='Scheduled'&&s.date<today).sort((a,b)=>a.date.localeCompare(b.date));
 const completed=sched.filter(s=>s.status==='Completed').sort((a,b)=>b.date.localeCompare(a.date));
