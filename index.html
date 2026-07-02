@@ -149,7 +149,7 @@ let charts={};
 const CC_TEAM_KPIS_NEW=[
 {id:'tow',name:'Successful Tow of Illegal Parkers',impact:'HIGH',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
 {id:'parkpliant',name:'Parkpliant Successful Payments',impact:'HIGH',type:'per_unit',rate:10,unit:'successful payment'},
-{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'tier',tiers:[{min:95,max:100,val:30},{min:85,max:94,val:22.50},{min:70,max:84,val:15},{min:50,max:69,val:7.50},{min:0,max:49,val:0}],unit:'% effectiveness'},
+{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:30},{min:85,max:94,val:22.50},{min:70,max:84,val:15},{min:50,max:69,val:7.50},{min:0,max:49,val:0}],unit:'%'},
 {id:'towincident',name:'Towing Incident Investigation',impact:'MED-HIGH',type:'per_unit',rate:10,unit:'completed investigation'},
 {id:'frt',name:'First Response Time (FRT)',impact:'MEDIUM',type:'tier_time',tiers:[{label:'<3 min',val:20},{label:'3-4 min',val:10},{label:'4-5 min',val:5},{label:'>5 min',val:0}],unit:'avg minutes'},
 {id:'listing_issue',name:'Customer Reported Listing Issue Resolution',impact:'MEDIUM',type:'per_unit',rate:3,unit:'resolved issue'},
