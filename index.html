@@ -737,20 +737,6 @@ h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weigh
 h+='</div>';
 });
 h+='</div>';
-h+='<div class="form-section"><h3><i class="fas fa-exclamation-triangle"></i> Deductions (Invalid Tows)</h3>';
-h+='<div id="deductionList">';
-(d.deductions||[]).forEach((ded,i)=>{
-h+='<div class="deduction-item"><span class="desc">'+ded.description+'</span><span class="amt">-'+fmt(ded.amount)+'</span><span>('+ded.person+')</span><button class="btn btn-danger btn-sm" onclick="removeDeduction('+i+')"><i class="fas fa-trash"></i></button></div>';
-});
-h+='</div>';
-h+='<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">';
-h+='<input id="dedDesc" placeholder="Description" style="flex:2;min-width:200px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
-h+='<input id="dedAmt" type="number" placeholder="Amount" style="width:100px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
-h+='<select id="dedPerson" style="width:140px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
-[...CC_MEMBERS,...DUAL_TEAM_MEMBERS].forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
-h+='</select>';
-h+='<button class="btn btn-gold btn-sm" onclick="addDeduction()"><i class="fas fa-plus"></i> Add</button>';
-h+='</div></div>';
 h+='<div class="form-section"><h3><i class="fas fa-sliders-h"></i> Overrides</h3>';
 h+='<div class="override-group"><label>Gross Override ($):</label><input type="number" value="'+(d.ccTeamGrossOverride!==null&&d.ccTeamGrossOverride!==undefined?d.ccTeamGrossOverride:'')+'" onchange="updateCCOverride(\'ccTeamGrossOverride\',this.value)"></div>';
 h+='<div class="override-group"><label>Net Override ($):</label><input type="number" value="'+(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined?d.ccTeamNetOverride:'')+'" onchange="updateCCOverride(\'ccTeamNetOverride\',this.value)"></div>';
@@ -769,16 +755,6 @@ document.getElementById('content').innerHTML=h;
 
 function updateCCTeam(id,val){const d=getMonthData(currentMonth);d.cc_team[id]=val;}
 function updateCCOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
-function addDeduction(){
-const desc=document.getElementById('dedDesc').value;
-const amt=parseFloat(document.getElementById('dedAmt').value);
-const person=document.getElementById('dedPerson').value;
-if(!desc||isNaN(amt))return toast('Please fill description and amount');
-const d=getMonthData(currentMonth);
-d.deductions.push({description:desc,amount:amt,person:person});
-saveData();renderCCTeam();toast('Deduction added');
-}
-function removeDeduction(i){const d=getMonthData(currentMonth);d.deductions.splice(i,1);saveData();renderCCTeam();toast('Deduction removed');}
 function saveCCTeam(){saveData();renderCCTeam();toast('CC Team KPI saved');}
 
 function renderAdminTeam(){
