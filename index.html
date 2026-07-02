@@ -149,7 +149,7 @@ let charts={};
 const CC_TEAM_KPIS_NEW=[
 {id:'tow',name:'Successful Tow of Illegal Parkers',impact:'HIGH',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
 {id:'parkpliant',name:'Parkpliant Successful Payments',impact:'HIGH',type:'per_unit',rate:10,unit:'successful payment'},
-{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:30},{min:85,max:94,val:22.50},{min:70,max:84,val:15},{min:50,max:69,val:7.50},{min:0,max:49,val:0}],unit:'%'},
+{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'weekly_avg_ratio',tiers:[{min:95,max:100,val:30},{min:85,max:94,val:22.50},{min:70,max:84,val:15},{min:50,max:69,val:7.50},{min:0,max:49,val:0}],unit:'%',ratioLabels:{numerator:'# Tow Requests',denominator:'# Lot Full Reported'}},
 {id:'towincident',name:'Towing Incident Investigation',impact:'MED-HIGH',type:'per_unit',rate:10,unit:'completed investigation'},
 {id:'frt',name:'First Response Time (FRT)',impact:'MEDIUM',type:'tier_time',tiers:[{label:'<3 min',val:20},{label:'3-4 min',val:10},{label:'4-5 min',val:5},{label:'>5 min',val:0}],unit:'avg minutes'},
 {id:'listing_issue',name:'Customer Reported Listing Issue Resolution',impact:'MEDIUM',type:'per_unit',rate:3,unit:'resolved issue'},
@@ -459,6 +459,7 @@ function fmt(v){return'$'+parseFloat(v||0).toFixed(2);}
 
 function calcCCTeamKPI(kpi,val){
 if(val===''||val===null||val===undefined)return 0;
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 val=parseFloat(val);
 if(isNaN(val))return 0;
 if(kpi.type==='per_unit')return val*kpi.rate;
@@ -490,6 +491,17 @@ if(pcts.length===0)return{avg:0,weekCount:0,weeks:[]};
 const avg=pcts.reduce((a,b)=>a+b,0)/pcts.length;
 return{avg:avg,weekCount:pcts.length,weeks:pcts};}
 
+function calcWeeklyAvgRatio(val){
+if(!val||typeof val!=='object')return{avg:0,weekCount:0,weeks:[]};
+const wks=Object.keys(val).filter(k=>k.startsWith('w'));
+let pcts=[];
+wks.forEach(w=>{const wd=val[w];if(!wd||typeof wd!=='object')return;
+const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;
+if(den>0){pcts.push({week:w,numerator:num,denominator:den,pct:num/den*100});}});
+if(pcts.length===0)return{avg:0,weekCount:0,weeks:[]};
+const avg=pcts.reduce((a,b)=>a+b.pct,0)/pcts.length;
+return{avg:avg,weekCount:pcts.length,weeks:pcts};}
+
 function calcListingRevisionScore(val){
 if(!val||typeof val!=='object')return{nlTotal:0,nlUpdated:0,nlPct:0,revTotal:0,revUpdated:0,revPct:0,weekCount:0};
 const wks=Object.keys(val).filter(k=>k.startsWith('w'));
@@ -506,6 +518,7 @@ function calcAdminTeamKPI(kpi,val){
 if(val===''||val===null||val===undefined)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
 if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
@@ -711,19 +724,53 @@ const wKey='cc_'+kpi.id;
 const isExpanded=expandedWeekly[wKey];
 h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+(kpi.impact?' <span class="impact impact-'+kpi.impact+'">'+kpi.impact+'</span>':'')+'</label>';
-if(kpi.type==='tier_time'){
+if(kpi.type==='weekly_avg_ratio'){
+const wrVal=typeof val==='object'&&val?val:{};
+const sc=calcWeeklyAvgRatio(wrVal);
+const numLabel=kpi.ratioLabels?kpi.ratioLabels.numerator:'# Numerator';
+const denLabel=kpi.ratioLabels?kpi.ratioLabels.denominator:'# Denominator';
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='<div style="width:100%;margin-top:8px;padding:12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Ratio Breakdown</div>';
+h+='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+h+='<tr style="border-bottom:1px solid var(--border);">';
+h+='<th style="text-align:left;padding:6px 8px;color:var(--gold);font-size:11px;">Week</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+numLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+denLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">%</th>';
+h+='</tr>';
+weeks.forEach(w=>{
+const wd=wrVal[w.id]||{};
+const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;
+const pct=den>0?(num/den*100).toFixed(2)+'%':'-';
+const pctC=den>0?(num/den*100>=95?'#4CAF50':num/den*100>=85?'#FF9800':'#f44336'):'var(--text-muted)';
+h+='<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
+h+='<td style="padding:6px 8px;color:var(--text-muted);font-size:11px;">'+w.label+'</td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.numerator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioCC(\''+kpi.id+'\',\''+w.id+'\',\'numerator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.denominator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioCC(\''+kpi.id+'\',\''+w.id+'\',\'denominator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;color:'+pctC+';font-weight:600;">'+pct+'</td>';
+h+='</tr>';
+});
+h+='</table>';
+if(sc.weekCount>0){
+const avgC=sc.avg>=95?'#4CAF50':sc.avg>=85?'#FF9800':'#f44336';
+h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
+h+='<div style="font-weight:600;">Monthly Average ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+'): <span style="color:'+avgC+';font-size:14px;">'+sc.avg.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
+h+='</div>';}
+h+='</div>';
+}else if(kpi.type==='tier_time'){
 h+='<select onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);">';
 kpi.tiers.forEach(t=>{h+='<option value="'+t.val+'"'+(parseFloat(val)===t.val?' selected':'')+'>'+t.label+' ($'+t.val+')</option>';});
 h+='</select>';
 }else{
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
-h+='<span class="kpi-value">'+fmt(calc)+'</span>';
-if(kpi.type!=='tier_time'){
+if(kpi.type!=='weekly_avg_ratio') h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+if(kpi.type!=='tier_time'&&kpi.type!=='weekly_avg_ratio'){
 h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderCCTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
 if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.cc_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyCC,\''+kpi.id+'\',getWeekRanges(currentMonth));renderCCTeam();" title="Reset to weekly sum">Reset</button>';
 }
-if(isExpanded&&kpi.type!=='tier_time'){
+if(isExpanded&&kpi.type!=='tier_time'&&kpi.type!=='weekly_avg_ratio'){
 h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
 h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
@@ -754,6 +801,7 @@ document.getElementById('content').innerHTML=h;
 }
 
 function updateCCTeam(id,val){const d=getMonthData(currentMonth);d.cc_team[id]=val;}
+function updateWeeklyRatioCC(kpiId,weekId,field,val){const d=getMonthData(currentMonth);if(!d.cc_team[kpiId]||typeof d.cc_team[kpiId]!=='object')d.cc_team[kpiId]={};if(!d.cc_team[kpiId][weekId]||typeof d.cc_team[kpiId][weekId]!=='object')d.cc_team[kpiId][weekId]={};d.cc_team[kpiId][weekId][field]=val===''?'':parseFloat(val);saveData();renderCCTeam();}
 function updateCCOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
 function saveCCTeam(){saveData();renderCCTeam();toast('CC Team KPI saved');}
 
@@ -772,6 +820,7 @@ const isDropdown=kpi.type==='select';
 const isMultiRate=kpi.type==='multi_rate';
 const isEndorsement=kpi.type==='endorsement_detail';
 const isWeeklyAvg=kpi.type==='weekly_avg_tier';
+const isWeeklyRatio=kpi.type==='weekly_avg_ratio';
 const isListingRev=kpi.type==='listing_revision';
 h+='<div class="form-group" style="flex-wrap:wrap;">';
 h+='<label>'+kpi.name+'</label>';
@@ -838,6 +887,40 @@ h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size
 h+='</div>';
 if(sc.weekCount>0){
 const avgC=sc.avg>=95?'#4CAF50':sc.avg>=90?'#FF9800':'#f44336';
+h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
+h+='<div style="font-weight:600;">Monthly Average ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+'): <span style="color:'+avgC+';font-size:14px;">'+sc.avg.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
+h+='</div>';}
+h+='</div>';
+}else if(isWeeklyRatio){
+const wrVal=typeof val==='object'&&val?val:{};
+const sc=calcWeeklyAvgRatio(wrVal);
+const numLabel=kpi.ratioLabels?kpi.ratioLabels.numerator:'# Numerator';
+const denLabel=kpi.ratioLabels?kpi.ratioLabels.denominator:'# Denominator';
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='<div style="width:100%;margin-top:8px;padding:12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Ratio Breakdown</div>';
+h+='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+h+='<tr style="border-bottom:1px solid var(--border);">';
+h+='<th style="text-align:left;padding:6px 8px;color:var(--gold);font-size:11px;">Week</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+numLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+denLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">%</th>';
+h+='</tr>';
+weeks.forEach(w=>{
+const wd=wrVal[w.id]||{};
+const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;
+const pct=den>0?(num/den*100).toFixed(2)+'%':'-';
+const pctC=den>0?(num/den*100>=95?'#4CAF50':num/den*100>=85?'#FF9800':'#f44336'):'var(--text-muted)';
+h+='<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
+h+='<td style="padding:6px 8px;color:var(--text-muted);font-size:11px;">'+w.label+'</td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.numerator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioDetail(\''+kpi.id+'\',\''+w.id+'\',\'numerator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.denominator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioDetail(\''+kpi.id+'\',\''+w.id+'\',\'denominator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;color:'+pctC+';font-weight:600;">'+pct+'</td>';
+h+='</tr>';
+});
+h+='</table>';
+if(sc.weekCount>0){
+const avgC=sc.avg>=95?'#4CAF50':sc.avg>=85?'#FF9800':'#f44336';
 h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
 h+='<div style="font-weight:600;">Monthly Average ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+'): <span style="color:'+avgC+';font-size:14px;">'+sc.avg.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
 h+='</div>';}
@@ -956,6 +1039,7 @@ function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team
 function updateAdminMultiRate(kpiId,rateId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][rateId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateEndorsementDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.endorsements||typeof d.admin_team.endorsements!=='object')d.admin_team.endorsements={};if(!d.admin_team.endorsements[weekId])d.admin_team.endorsements[weekId]={};d.admin_team.endorsements[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateWeeklyAvgDetail(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][weekId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateWeeklyRatioDetail(kpiId,weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};if(!d.admin_team[kpiId][weekId]||typeof d.admin_team[kpiId][weekId]!=='object')d.admin_team[kpiId][weekId]={};d.admin_team[kpiId][weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateListingRevDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.new_listing||typeof d.admin_team.new_listing!=='object')d.admin_team.new_listing={};if(!d.admin_team.new_listing[weekId])d.admin_team.new_listing[weekId]={};d.admin_team.new_listing[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateAdminOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
 function saveAdminTeam(){saveData();renderAdminTeam();toast('Admin Team KPI saved');}
@@ -1140,6 +1224,7 @@ const val=raw[kpi.id];
 if(val===undefined||val===''||val===null)return 0;
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit')return parseFloat(val)||0;
 if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
@@ -1152,6 +1237,7 @@ const val=raw[kpi.id];
 if(val===undefined||val===''||val===null)return '';
 if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return '';return 'Ack: '+sc.ackPct.toFixed(1)+'% | Comp: '+sc.compPct.toFixed(1)+'% | Overall: '+sc.overall.toFixed(1)+'%';}
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return '';return 'Avg: '+sc.avg.toFixed(1)+'%';}
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return '';return 'Avg: '+sc.avg.toFixed(1)+'%';}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return '';return 'NL: '+sc.nlUpdated+'/'+sc.nlTotal+' ('+sc.nlPct.toFixed(1)+'%) | Rev: '+sc.revUpdated+'/'+sc.revTotal+' ('+sc.revPct.toFixed(1)+'%)';}
 if(kpi.type==='multi_rate'){if(typeof val==='object'&&val){let parts=[];Object.entries(val).forEach(([k,v])=>{if(v)parts.push(k+': '+v);});return parts.join(', ')||'';}return '';}
 const n=parseFloat(val);
@@ -1347,14 +1433,14 @@ const kpis=getKPIsForPerson(p);let attainParts=[];
 kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
 h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
 });
-let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);let ccParts=[];ccKpis.forEach(k=>{const v=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;ccWk+=v;if(v>0)ccParts.push(v+' '+k.unit);});
+let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);let ccParts=[];ccKpis.forEach(k=>{if(k.type==='weekly_avg_ratio'){const wrVal=d.cc_team[k.id];if(wrVal&&typeof wrVal==='object'){const wd=wrVal[w.id];if(wd&&typeof wd==='object'){const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;if(den>0){const pct=(num/den*100).toFixed(1);ccParts.push(k.name+': '+num+'/'+den+' ('+pct+'%)');}}}return;}const v=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;ccWk+=v;if(v>0)ccParts.push(v+' '+k.unit);});
 h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(ccWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+ccParts.join(', ')+'">'+(ccParts.length>0?ccParts.join(', '):'—')+'</td>';
 ADMIN_MEMBERS.forEach(p=>{
 const kpis=getKPIsForPerson(p);let attainParts=[];
 kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
 h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
 });
-let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{if(k.type==='endorsement_detail'){const eVal=d.admin_team.endorsements;if(eVal&&typeof eVal==='object'){const wd=eVal[w.id];if(wd&&wd.total>0){const t=parseFloat(wd.total),c=parseFloat(wd.completed)||0;const pct=(c/t*100).toFixed(1);adParts.push(t+' endors ('+pct+'%)');}}return;}if(k.type==='weekly_avg_tier'){const waVal=d.admin_team[k.id];if(waVal&&typeof waVal==='object'){const wv=parseFloat(waVal[w.id]);if(!isNaN(wv)&&wv>0)adParts.push(k.name+': '+wv.toFixed(1)+'%');}return;}if(k.type==='listing_revision'){const lrVal=d.admin_team[k.id];if(lrVal&&typeof lrVal==='object'){const wd=lrVal[w.id];if(wd){const nt=parseFloat(wd.nl_total)||0,nu=parseFloat(wd.nl_updated)||0,rt=parseFloat(wd.rev_total)||0,ru=parseFloat(wd.rev_updated)||0;if(nt>0||rt>0)adParts.push('NL:'+nu+'/'+nt+' Rev:'+ru+'/'+rt);}}return;}const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
+let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{if(k.type==='endorsement_detail'){const eVal=d.admin_team.endorsements;if(eVal&&typeof eVal==='object'){const wd=eVal[w.id];if(wd&&wd.total>0){const t=parseFloat(wd.total),c=parseFloat(wd.completed)||0;const pct=(c/t*100).toFixed(1);adParts.push(t+' endors ('+pct+'%)');}}return;}if(k.type==='weekly_avg_tier'){const waVal=d.admin_team[k.id];if(waVal&&typeof waVal==='object'){const wv=parseFloat(waVal[w.id]);if(!isNaN(wv)&&wv>0)adParts.push(k.name+': '+wv.toFixed(1)+'%');}return;}if(k.type==='weekly_avg_ratio'){const wrVal=d.admin_team[k.id];if(wrVal&&typeof wrVal==='object'){const wd=wrVal[w.id];if(wd&&typeof wd==='object'){const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;if(den>0){const pct=(num/den*100).toFixed(1);adParts.push(k.name+': '+num+'/'+den+' ('+pct+'%)');}}}return;}if(k.type==='listing_revision'){const lrVal=d.admin_team[k.id];if(lrVal&&typeof lrVal==='object'){const wd=lrVal[w.id];if(wd){const nt=parseFloat(wd.nl_total)||0,nu=parseFloat(wd.nl_updated)||0,rt=parseFloat(wd.rev_total)||0,ru=parseFloat(wd.rev_updated)||0;if(nt>0||rt>0)adParts.push('NL:'+nu+'/'+nt+' Rev:'+ru+'/'+rt);}}return;}const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
 h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+adParts.join(', ')+'">'+(adParts.length>0?adParts.join(', '):'—')+'</td>';
 h+='</tr>';
 });
