@@ -1614,8 +1614,8 @@ function renderPerfRating(){
 const d=getMonthData(currentMonth);
 if(!d.perfRatings)d.perfRatings={};
 const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
-const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan');
-const ccList=[...CC_MEMBERS.filter(p=>p!=='Kenan'),...dualFiltered];
+const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const ccList=[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualFiltered];
 const adminList=[...ADMIN_MEMBERS,...dualFiltered];
 const members=perfRatingTab==='cc'?ccList:adminList;
 let h='<div class="tabs">';
@@ -1723,8 +1723,8 @@ function exportPerfRatingCSV(){
 const d=getMonthData(currentMonth);
 if(!d.perfRatings)d.perfRatings={};
 const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
-const dualF=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan');
-const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'),...dualF]:[...ADMIN_MEMBERS,...dualF];
+const dualF=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualF]:[...ADMIN_MEMBERS,...dualF];
 let csv='Team Member,Team,Individual KPI $,Max KPI $,KPI %,Auto Rating,Manager Rating,Effective Rating,Final Bonus,Status,Key Strengths,Development Areas,Action Items,Next Review\n';
 members.forEach(person=>{
 const kpis=getKPIsForPerson(person);
@@ -1751,8 +1751,8 @@ function exportPerfRatingPDF(){
 const d=getMonthData(currentMonth);
 if(!d.perfRatings)d.perfRatings={};
 const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
-const dualPdf=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan');
-const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'),...dualPdf]:[...ADMIN_MEMBERS,...dualPdf];
+const dualPdf=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualPdf]:[...ADMIN_MEMBERS,...dualPdf];
 const teamName=perfRatingTab==='cc'?'CC Team':'Admin Team';
 let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Performance Rating - '+teamName+' - '+monthLabel+'</title>';
 html+='<style>body{font-family:Arial,sans-serif;margin:20px;color:#333;}h1{color:#1B2A4A;border-bottom:3px solid #D4A843;padding-bottom:10px;}';
@@ -1813,9 +1813,9 @@ const win=window.open('','_blank');win.document.write(html);win.document.close()
 
 let perfDashTab='cc';
 function renderPerfDashboard(){
-const ccList=CC_MEMBERS.filter(p=>p!=='Kenan');
+const ccList=CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
 const adminList=ADMIN_MEMBERS;
-const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan');
+const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
 const ccMembers=[...ccList,...dualFiltered];
 const adminMembers=[...adminList,...dualFiltered];
 const members=perfDashTab==='cc'?ccMembers:adminMembers;
@@ -1873,7 +1873,6 @@ h+='</div>';
 });
 h+='</div>';
 // Chart canvas for trend
-h+='<canvas id="perfDashChart" height="220"></canvas>';
 h+='</div>';
 // Monthly detail cards
 monthsData.forEach(md=>{
@@ -1923,36 +1922,6 @@ h+='</div>';
 h+='</div>';
 });
 document.getElementById('content').innerHTML=h;
-// Render trend chart
-const chartMonths=monthsData.filter(m=>m.hasData);
-if(chartMonths.length>0&&typeof Chart!=='undefined'){
-const ctx=document.getElementById('perfDashChart');
-if(ctx){
-if(charts.perfDash)charts.perfDash.destroy();
-charts.perfDash=new Chart(ctx,{
-type:'bar',
-data:{
-labels:chartMonths.map(m=>m.label.split(' ')[0]),
-datasets:[
-{label:'Exceeds',data:chartMonths.map(m=>m.exceeds),backgroundColor:'rgba(76,175,80,0.85)',borderRadius:4,stack:'ratings'},
-{label:'Meets',data:chartMonths.map(m=>m.meets),backgroundColor:'rgba(212,168,67,0.85)',borderRadius:4,stack:'ratings'},
-{label:'Needs Imp.',data:chartMonths.map(m=>m.needs),backgroundColor:'rgba(255,152,0,0.85)',borderRadius:4,stack:'ratings'},
-{label:'Below',data:chartMonths.map(m=>m.below),backgroundColor:'rgba(244,67,54,0.85)',borderRadius:4,stack:'ratings'},
-{label:'Avg KPI %',data:chartMonths.map(m=>m.avgPct),type:'line',borderColor:'#fff',backgroundColor:'rgba(255,255,255,0.1)',pointBackgroundColor:'#fff',pointRadius:5,tension:0.3,yAxisID:'y1',borderWidth:2}
-]
-},
-options:{
-responsive:true,
-plugins:{legend:{labels:{color:'#ccc',font:{size:11}}}},
-scales:{
-x:{ticks:{color:'#aaa'},grid:{color:'rgba(255,255,255,0.05)'}},
-y:{stacked:true,ticks:{color:'#aaa',stepSize:1},grid:{color:'rgba(255,255,255,0.08)'},title:{display:true,text:'Members',color:'#aaa'}},
-y1:{position:'right',min:0,max:100,ticks:{color:'#aaa',callback:v=>v+'%'},grid:{drawOnChartArea:false},title:{display:true,text:'Avg KPI %',color:'#aaa'}}
-}
-}
-});
-}
-}
 }
 
 let coachingPerson=null;
