@@ -768,7 +768,7 @@ h+='</select>';
 }else{
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
-if(kpi.type!=='weekly_avg_ratio') h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
 if(kpi.type!=='tier_time'&&kpi.type!=='weekly_avg_ratio'){
 h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderCCTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
 if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.cc_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyCC,\''+kpi.id+'\',getWeekRanges(currentMonth));renderCCTeam();" title="Reset to weekly sum">Reset</button>';
