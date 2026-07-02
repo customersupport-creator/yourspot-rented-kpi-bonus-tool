@@ -525,9 +525,7 @@ return total;
 function getCCTeamNet(m){
 const d=getMonthData(m);
 if(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined&&d.ccTeamNetOverride!=='')return parseFloat(d.ccTeamNetOverride);
-const gross=getCCTeamTotal(m);
-const dedCount=(d.deductions||[]).length;
-return gross*(1-dedCount*10/100);
+return getCCTeamTotal(m);
 }
 
 function getAdminTeamTotal(m){
@@ -683,7 +681,7 @@ const eligibleBonuses=bonuses.filter(b=>!DUAL_TEAM_MEMBERS.includes(b.name));
 const topP=eligibleBonuses[0];
 const lowP=eligibleBonuses[eligibleBonuses.length-1];
 let h='<div class="stats-grid">';
-h+='<div class="stat-card"><div class="label">CC Team Pool (Net)</div><div class="value">'+fmt(ccPool)+'</div><div class="sub">After deductions</div></div>';
+h+='<div class="stat-card"><div class="label">CC Team Pool</div><div class="value">'+fmt(ccPool)+'</div><div class="sub">Total CC team bonus</div></div>';
 h+='<div class="stat-card"><div class="label">Admin Team Pool</div><div class="value">'+fmt(adminPool)+'</div><div class="sub">Total admin bonus</div></div>';
 h+='<div class="stat-card"><div class="label">Total Payout</div><div class="value">'+fmt(totalPayout)+'</div><div class="sub">All members combined</div></div>';
 h+='<div class="stat-card"><div class="label">Top Performer</div><div class="value" style="font-size:20px;">'+(topP?topP.name:'-')+'</div><div class="sub">'+(topP?fmt(topP.bonus):'')+'</div></div>';
@@ -762,10 +760,8 @@ const gross=getCCTeamTotal(currentMonth);
 const net=getCCTeamNet(currentMonth);
 const count=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 h+='<div class="summary-box"><h4>CC Team Bonus Summary</h4>';
-h+='<div class="row"><span>Gross Total</span><span class="val">'+fmt(gross)+'</span></div>';
-h+='<div class="row"><span>Deductions ('+((d.deductions||[]).length)+' x 10%)</span><span class="val" style="color:var(--danger);">-'+(((d.deductions||[]).length)*10)+'%</span></div>';
-h+='<div class="row"><span>Net Total</span><span class="val">'+fmt(net)+'</span></div>';
-h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(net/count)+'</span></div>';
+h+='<div class="row"><span>Total</span><span class="val">'+fmt(gross)+'</span></div>';
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(gross/count)+'</span></div>';
 h+='</div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveCCTeam()"><i class="fas fa-save"></i> Save</button></div>';
 document.getElementById('content').innerHTML=h;
@@ -1214,12 +1210,7 @@ h+='<td style="font-size:13px;color:var(--text-muted);">'+(attText||'<em>No data
 h+='<td style="font-weight:600;color:var(--gold);">'+fmt(earned)+'</td></tr>';
 });
 h+='</tbody><tfoot>';
-h+='<tr><td colspan="2" style="text-align:right;font-weight:700;">Total Team Bonus</td><td style="font-weight:700;color:var(--gold);">'+fmt(ccGross)+'</td></tr>';
-const ccDedAmt=ccGross-ccNet;
-if(ccDedAmt>0){
-h+='<tr><td colspan="2" style="text-align:right;color:var(--danger);">Deductions (Invalid Tow Reimbursements)</td><td style="color:var(--danger);font-weight:600;">-'+fmt(ccDedAmt)+'</td></tr>';
-}
-h+='<tr style="background:rgba(212,168,67,0.1);"><td colspan="2" style="text-align:right;font-weight:700;">Net Team Bonus</td><td style="font-weight:700;color:var(--gold);font-size:16px;">'+fmt(ccNet)+'</td></tr>';
+h+='<tr style="background:rgba(212,168,67,0.1);"><td colspan="2" style="text-align:right;font-weight:700;">Total Team Bonus</td><td style="font-weight:700;color:var(--gold);font-size:16px;">'+fmt(ccNet)+'</td></tr>';
 h+='<tr><td colspan="2" style="text-align:right;">Divided among '+ccCount+' team members</td><td style="font-weight:600;">'+fmt(ccNet/ccCount)+'</td></tr>';
 h+='</tfoot></table></div>';
 // Admin Team Pool - Category Breakdown
@@ -1340,7 +1331,7 @@ function exportSummary(){
 const d=getMonthData(currentMonth);
 const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
 let txt='YourSpot Rented - KPI Bonus Summary\n'+mLabel+'\n'+'='.repeat(50)+'\n\n';
-txt+='CC Team Pool: '+fmt(getCCTeamNet(currentMonth))+' (Net)\n';
+txt+='CC Team Pool: '+fmt(getCCTeamNet(currentMonth))+'\n';
 txt+='Admin Team Pool: '+fmt(getAdminTeamTotal(currentMonth))+'\n\n';
 txt+='Employee Bonuses:\n'+'-'.repeat(50)+'\n';
 ALL_MEMBERS.forEach(p=>{
@@ -1394,7 +1385,7 @@ h+='</tr>';
 h+='</tbody></table></div>';
 // Team Pool Status
 h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">';
-h+='<div class="stat-card"><div class="stat-label">CC Team Pool (Net)</div><div class="stat-value">'+fmt(ccNet)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(ccNet/ccCount)+' (÷'+ccCount+')</div></div>';
+h+='<div class="stat-card"><div class="stat-label">CC Team Pool</div><div class="stat-value">'+fmt(ccNet)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(ccNet/ccCount)+' (÷'+ccCount+')</div></div>';
 h+='<div class="stat-card"><div class="stat-label">Admin Team Pool</div><div class="stat-value">'+fmt(adminTotal)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(adminTotal/adminCount)+' (÷'+adminCount+')</div></div>';
 h+='</div>';
 // Individual KPI Rankings — CC Team
@@ -1506,7 +1497,7 @@ CC_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(
 ADMIN_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(k=>{const v=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;if(v>0)parts.push(v+' '+(k.unit||''));});txt+='  '+p.padEnd(12)+' '+(parts.length>0?parts.join(', '):'—')+'\n';});
 });
 txt+='\nTEAM POOL STATUS\n'+'-'.repeat(40)+'\n';
-txt+='CC Team Pool (Net): '+fmt(ccNet)+' | Per member: '+fmt(ccNet/ccCount)+'\n';
+txt+='CC Team Pool: '+fmt(ccNet)+' | Per member: '+fmt(ccNet/ccCount)+'\n';
 txt+='Admin Team Pool: '+fmt(adminTotal)+' | Per member: '+fmt(adminTotal/adminCount)+'\n\n';
 txt+='CC TEAM RANKINGS\n'+'-'.repeat(40)+'\n';
 CC_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),fb:getFinalBonus(currentMonth,p),deds:(d.deductions||[]).filter(x=>x.person===p).length})).sort((a,b)=>b.s-a.s).forEach((r,i)=>{
