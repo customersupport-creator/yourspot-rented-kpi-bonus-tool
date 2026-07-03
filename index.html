@@ -720,7 +720,16 @@ if(score>=50)return{rating:'Needs Improvement',color:'var(--warning)'};
 return{rating:'Below Expectations',color:'var(--danger)'};
 }
 
+const RATING_PWD='TRM#5_Rating!P3rform2026';
+function checkRatingAccess(){
+if(sessionStorage.getItem('ratingUnlocked')==='true')return true;
+const pw=prompt('Enter password to access this page:');
+if(pw===RATING_PWD){sessionStorage.setItem('ratingUnlocked','true');return true;}
+if(pw!==null)alert('Incorrect password.');
+return false;
+}
 function navigate(page){
+if((page==='perfrating'||page==='perfdash')&&!checkRatingAccess()){return;}
 currentPage=page;
 document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===page);});
 const titles={dashboard:'Dashboard',ccteam:'CC Team KPI',adminteam:'Admin Team KPI',individual:'Individual KPI',summary:'Bonus Summary',tracker:'Performance Tracker',coaching:'Coaching Card',perfrating:'Performance Rating',perfdash:'Rating Dashboard',pip:'PIP Tracking',schedule:'Coaching Schedule'};
