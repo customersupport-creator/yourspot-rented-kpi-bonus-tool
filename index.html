@@ -114,6 +114,7 @@ th{background:#eee;color:#000;}
 <div class="nav-item" data-page="weekly"><i class="fas fa-calendar-week"></i> Weekly Status</div>
 <div class="nav-item" data-page="tracker"><i class="fas fa-chart-line"></i> Performance Tracker</div>
 <div class="nav-item" data-page="coaching"><i class="fas fa-chalkboard-teacher"></i> Coaching Card</div>
+<div class="nav-item" data-page="tlcoaching"><i class="fas fa-user-tie"></i> TL Coaching</div>
 <div class="nav-item" data-page="perfrating"><i class="fas fa-star-half-alt"></i> Performance Rating</div>
 <div class="nav-item" data-page="perfdash"><i class="fas fa-th-large"></i> Rating Dashboard</div>
 <div class="nav-item" data-page="pip"><i class="fas fa-clipboard-check"></i> PIP Tracking</div>
@@ -689,6 +690,17 @@ return 1;
 function getCompetencyRatings(m,person){
 const d=getMonthData(m);
 if(!d.perfRatings)d.perfRatings={};
+// For July 2026+, auto-populate from TL averaged scores for TL-rated members
+if(m>='jul_2026'&&TL_RATED_MEMBERS.includes(person)){
+const tlAvg=getTLRatings(m,person);
+const manual=(d.perfRatings[person]&&d.perfRatings[person].competencies)||{};
+const merged={};
+COMPETENCIES.forEach(c=>{
+if(manual[c])merged[c]=manual[c]; // manual override takes precedence
+else if(tlAvg[c])merged[c]=Math.round(tlAvg[c]); // TL averaged score (rounded to int)
+});
+return merged;
+}
 if(!d.perfRatings[person])return{};
 return d.perfRatings[person].competencies||{};
 }
@@ -721,6 +733,7 @@ return{rating:'Below Expectations',color:'var(--danger)'};
 }
 
 const RATING_PWD='TRM#5_Rating!P3rform2026';
+const TL_PWD='TLead!Coach#R8ting$26';
 function checkRatingAccess(){
 if(sessionStorage.getItem('ratingUnlocked')==='true')return true;
 const pw=prompt('Enter password to access this page:');
@@ -728,15 +741,23 @@ if(pw===RATING_PWD){sessionStorage.setItem('ratingUnlocked','true');return true;
 if(pw!==null)alert('Incorrect password.');
 return false;
 }
+function checkTLAccess(){
+if(sessionStorage.getItem('tlUnlocked')==='true')return true;
+const pw=prompt('Enter Team Lead password:');
+if(pw===TL_PWD){sessionStorage.setItem('tlUnlocked','true');return true;}
+if(pw!==null)alert('Incorrect password.');
+return false;
+}
 function navigate(page){
 if((page==='perfrating'||page==='perfdash')&&!checkRatingAccess()){return;}
+if(page==='tlcoaching'&&!checkTLAccess()){return;}
 currentPage=page;
 document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===page);});
-const titles={dashboard:'Dashboard',ccteam:'CC Team KPI',adminteam:'Admin Team KPI',individual:'Individual KPI',summary:'Bonus Summary',tracker:'Performance Tracker',coaching:'Coaching Card',perfrating:'Performance Rating',perfdash:'Rating Dashboard',pip:'PIP Tracking',schedule:'Coaching Schedule'};
+const titles={dashboard:'Dashboard',ccteam:'CC Team KPI',adminteam:'Admin Team KPI',individual:'Individual KPI',summary:'Bonus Summary',tracker:'Performance Tracker',coaching:'Coaching Card',tlcoaching:'TL Coaching & Rating',perfrating:'Performance Rating',perfdash:'Rating Dashboard',pip:'PIP Tracking',schedule:'Coaching Schedule'};
 document.getElementById('pageTitle').textContent=titles[page]||'Dashboard';
 Object.values(charts).forEach(c=>{if(c&&c.destroy)c.destroy();});
 charts={};
-const renderers={dashboard:renderDashboard,ccteam:renderCCTeam,adminteam:renderAdminTeam,individual:renderIndividual,summary:renderSummary,weekly:renderWeekly,tracker:renderTracker,coaching:renderCoaching,perfrating:renderPerfRating,perfdash:renderPerfDashboard,pip:renderPIP,schedule:renderSchedule};
+const renderers={dashboard:renderDashboard,ccteam:renderCCTeam,adminteam:renderAdminTeam,individual:renderIndividual,summary:renderSummary,weekly:renderWeekly,tracker:renderTracker,coaching:renderCoaching,tlcoaching:renderTLCoaching,perfrating:renderPerfRating,perfdash:renderPerfDashboard,pip:renderPIP,schedule:renderSchedule};
 (renderers[page]||renderDashboard)();
 }
 
@@ -1666,6 +1687,141 @@ document.getElementById('content').innerHTML=h;
 }
 
 let perfRatingTab='cc';
+let tlCoachingTab='cc';
+// Team Lead Coaching constants
+const TL_CC_RATERS=['Gwen','Hazel'];
+const TL_CC_MEMBERS=['Donita','Michael','Angel','Christine'];
+const TL_ADMIN_RATERS=['Joan','Hazel'];
+const TL_ADMIN_MEMBERS=['Lovely','Jian'];
+const TL_RATED_MEMBERS=['Donita','Michael','Angel','Christine','Lovely','Jian'];
+
+function getTLRatings(m,person){
+const d=getMonthData(m);
+if(!d.tlRatings||!d.tlRatings[person])return{};
+const raters=Object.keys(d.tlRatings[person]);
+if(raters.length===0)return{};
+const avg={};
+COMPETENCIES.forEach(c=>{
+let sum=0,cnt=0;
+raters.forEach(r=>{
+const v=d.tlRatings[person][r]&&d.tlRatings[person][r].competencies?parseFloat(d.tlRatings[person][r].competencies[c])||0:0;
+if(v>0){sum+=v;cnt++;}
+});
+if(cnt>0)avg[c]=Math.round(sum/cnt*10)/10;
+});
+return avg;
+}
+
+function renderTLCoaching(){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const isCC=tlCoachingTab==='cc';
+const raters=isCC?TL_CC_RATERS:TL_ADMIN_RATERS;
+const members=isCC?TL_CC_MEMBERS:TL_ADMIN_MEMBERS;
+const teamLead=isCC?'Gwen':'Joan';
+let h='<div class="tabs">';
+h+='<div class="tab'+(isCC?' active':'')+'" onclick="tlCoachingTab=\'cc\';renderTLCoaching()"><i class="fas fa-headset"></i> CC Team</div>';
+h+='<div class="tab'+(isCC?'':' active')+'" onclick="tlCoachingTab=\'admin\';renderTLCoaching()"><i class="fas fa-cogs"></i> Admin Team</div>';
+h+='</div>';
+// Team info card
+h+='<div class="form-section" style="margin-bottom:15px;padding:15px;">';
+h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-user-tie"></i> Team Lead:</strong> <span>'+teamLead+'</span></div>';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-users"></i> Raters:</strong> <span>'+raters.join(', ')+'</span></div>';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-calendar"></i> Period:</strong> <span>'+monthLabel+'</span></div>';
+h+='</div></div>';
+// Per member coaching cards
+members.forEach(person=>{
+if(!d.tlRatings[person])d.tlRatings[person]={};
+const avgScores=getTLRatings(currentMonth,person);
+const avgVals=Object.values(avgScores).filter(v=>v>0);
+const overallAvg=avgVals.length>0?(avgVals.reduce((a,b)=>a+b,0)/avgVals.length):0;
+const overallNorm=overallAvg>0?((overallAvg-1)/4*100):0;
+const oColor=overallNorm>=90?'var(--success)':overallNorm>=70?'var(--gold)':overallNorm>=50?'var(--warning)':'var(--danger)';
+h+='<div class="form-section" style="margin-bottom:20px;">';
+h+='<h3><i class="fas fa-user-circle"></i> '+person+'</h3>';
+// Averaged score summary
+if(avgVals.length>0){
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid '+oColor+';">';
+h+='<span style="color:var(--text-muted);font-size:13px;"><i class="fas fa-calculator"></i> Averaged Competency Score ('+raters.length+' raters)</span>';
+h+='<span style="font-size:18px;font-weight:700;color:'+oColor+';">'+overallAvg.toFixed(1)+'/5 <span style="font-size:12px;color:var(--text-muted);">('+Math.round(overallNorm)+'%)</span></span>';
+h+='</div>';
+}
+// Per-rater tabs
+raters.forEach(rater=>{
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+const rd=d.tlRatings[person][rater];
+if(!rd.competencies)rd.competencies={};
+h+='<div style="background:rgba(212,168,67,0.04);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;">';
+h+='<div style="font-weight:600;color:var(--gold);font-size:13px;margin-bottom:8px;"><i class="fas fa-user-edit"></i> Rated by: '+rater+'</div>';
+// Competency inputs
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px;margin-bottom:10px;">';
+COMPETENCIES.forEach(comp=>{
+const val=rd.competencies[comp]||'';
+const avgVal=avgScores[comp];
+h+='<div style="display:flex;align-items:center;gap:6px;background:var(--navy-dark);padding:6px 10px;border-radius:5px;">';
+h+='<label style="flex:1;font-size:12px;color:var(--text);">'+comp+'</label>';
+h+='<select style="width:75px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:5px;border-radius:4px;font-size:12px;" onchange="updateTLCompetency(\''+person+'\',\''+rater+'\',\''+comp+'\',this.value)">';
+h+='<option value=""'+(val===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(val==i?' selected':'')+'>'+i+'</option>';}
+h+='</select>';
+if(val){const vc=val>=4?'var(--success)':val>=3?'var(--gold)':val>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:10px;font-weight:700;color:'+vc+';min-width:16px;">'+val+'</span>';}
+if(avgVal){h+='<span style="font-size:9px;color:var(--text-muted);" title="Average">avg:'+avgVal.toFixed(1)+'</span>';}
+h+='</div>';
+});
+h+='</div>';
+// Coaching notes for this rater
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+h+='<div><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-star"></i> Strengths</label>';
+h+='<textarea style="min-height:50px;font-size:12px;" placeholder="Key strengths..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'strengths\',this.value)">'+((rd.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-arrow-up"></i> Development</label>';
+h+='<textarea style="min-height:50px;font-size:12px;" placeholder="Areas for growth..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'development\',this.value)">'+((rd.development||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+h+='<div style="margin-top:8px;"><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-tasks"></i> Action Items</label>';
+h+='<textarea style="min-height:45px;font-size:12px;" placeholder="Action items and follow-up..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'actionItems\',this.value)">'+((rd.actionItems||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+});
+// Averaged competency summary table
+if(avgVals.length>0){
+h+='<div style="margin-top:8px;"><strong style="color:var(--gold);font-size:12px;"><i class="fas fa-table"></i> Averaged Scores Summary</strong>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px;margin-top:4px;">';
+COMPETENCIES.forEach(comp=>{
+const av=avgScores[comp]||0;
+const ac=av>=4?'var(--success)':av>=3?'var(--gold)':av>=2?'var(--warning)':av>0?'var(--danger)':'var(--text-muted)';
+h+='<div style="display:flex;justify-content:space-between;background:var(--navy-dark);padding:5px 8px;border-radius:4px;font-size:11px;">';
+h+='<span style="color:var(--text);">'+comp+'</span>';
+h+='<span style="font-weight:700;color:'+ac+';">'+(av>0?av.toFixed(1)+'/5':'—')+'</span>';
+h+='</div>';
+});
+h+='</div></div>';
+}
+h+='</div>';
+});
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveTLCoaching()"><i class="fas fa-save"></i> Save All Ratings</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function updateTLCompetency(person,rater,comp,val){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+if(!d.tlRatings[person])d.tlRatings[person]={};
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+if(!d.tlRatings[person][rater].competencies)d.tlRatings[person][rater].competencies={};
+d.tlRatings[person][rater].competencies[comp]=val?parseInt(val):'';
+renderTLCoaching();
+}
+
+function updateTLField(person,rater,field,val){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+if(!d.tlRatings[person])d.tlRatings[person]={};
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+d.tlRatings[person][rater][field]=val;
+}
+
+function saveTLCoaching(){saveData();toast('Team Lead ratings saved');}
+
 function renderPerfRating(){
 const d=getMonthData(currentMonth);
 if(!d.perfRatings)d.perfRatings={};
@@ -1728,10 +1884,14 @@ h+='<div style="font-size:12px;color:var(--text-muted);">Tow Deductions (10%): <
 h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (40%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.4).toFixed(1)+'</span></div>';
 h+='</div></div>';
 // Competency Ratings
+const isTLFed=currentMonth>='jul_2026'&&TL_RATED_MEMBERS.includes(person);
+const tlAvgScores=isTLFed?getTLRatings(currentMonth,person):{};
 h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-clipboard-check"></i> Competency Ratings</strong> <span style="font-size:11px;color:var(--text-muted);">(1=Poor, 2=Below, 3=Meets, 4=Exceeds, 5=Outstanding)</span>';
+if(isTLFed){h+='<div style="font-size:11px;color:var(--info);margin-top:4px;"><i class="fas fa-info-circle"></i> Auto-populated from Team Lead Coaching (averaged). Manual edits override.</div>';}
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-top:8px;">';
 COMPETENCIES.forEach(comp=>{
-const val=pr.competencies[comp]||'';
+const mergedComp=getCompetencyRatings(currentMonth,person);
+const val=mergedComp[comp]||pr.competencies[comp]||'';
 h+='<div style="display:flex;align-items:center;gap:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
 h+='<label style="flex:1;font-size:13px;color:var(--text);min-width:180px;">'+comp+'</label>';
 h+='<select style="width:80px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:13px;" onchange="updatePerfCompetency(\''+person+'\',\''+comp+'\',this.value)">';
