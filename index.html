@@ -739,7 +739,7 @@ const ccPool=getCCTeamNet(currentMonth);
 const adminPool=getAdminTeamTotal(currentMonth);
 let totalPayout=0;
 ALL_MEMBERS.forEach(p=>{totalPayout+=getFinalBonus(currentMonth,p);});
-const bonuses=ALL_MEMBERS.map(p=>({name:p,bonus:getFinalBonus(currentMonth,p)})).sort((a,b)=>b.bonus-a.bonus);
+const bonuses=ALL_MEMBERS.filter(p=>p!=='Kenan').map(p=>({name:p,bonus:getFinalBonus(currentMonth,p)})).sort((a,b)=>b.bonus-a.bonus);
 const eligibleBonuses=bonuses.filter(b=>!DUAL_TEAM_MEMBERS.includes(b.name));
 const topP=eligibleBonuses[0];
 const lowP=eligibleBonuses[eligibleBonuses.length-1];
