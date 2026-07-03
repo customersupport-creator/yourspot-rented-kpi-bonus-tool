@@ -1954,8 +1954,8 @@ memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveR
 const avgWeighted=members.length>0?Math.round(totalWeighted/members.length):0;
 monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key)});
 });
-// Overall trend chart placeholder
-h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Rating Trend Overview</h3>';
+// Team average trend overview
+h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Team Average Trend</h3>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:15px;">';
 monthsData.forEach(md=>{
 if(!md.hasData)return;
@@ -1968,6 +1968,46 @@ h+='</div>';
 });
 h+='</div>';
 h+='</div>';
+// Individual rating trends with quarterly summaries
+const QUARTERS=[{label:'Q2',months:['apr_2026','may_2026','jun_2026']},{label:'Q3',months:['jul_2026','aug_2026','sep_2026']},{label:'Q4',months:['oct_2026','nov_2026','dec_2026']}];
+h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-users"></i> '+teamLabel+' — Individual Rating Trends</h3>';
+h+='<div style="display:flex;flex-direction:column;gap:12px;">';
+members.forEach(person=>{
+const personMonths=[];
+monthsData.forEach(md=>{
+if(!md.hasData)return;
+const pm=md.memberDetails.find(m=>m.person===person);
+if(pm)personMonths.push({key:md.key,label:md.label.split(' ')[0],weighted:pm.weightedScore,rating:pm.effectiveRating,bonus:pm.finalBonus,kpiPct:pm.kpiPct});
+});
+if(personMonths.length===0)return;
+h+='<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;">';
+h+='<div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:8px;">'+person+'</div>';
+h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;">';
+// Monthly cards
+personMonths.forEach(pm=>{
+const c=pm.weighted>=90?'var(--success)':pm.weighted>=70?'var(--gold)':pm.weighted>=50?'var(--warning)':'var(--danger)';
+h+='<div style="background:var(--navy-dark);padding:8px 10px;border-radius:6px;text-align:center;border-top:2px solid '+c+';min-width:70px;flex:0 0 auto;">';
+h+='<div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">'+pm.label+'</div>';
+h+='<div style="font-size:18px;font-weight:700;color:'+c+';">'+pm.weighted.toFixed(1)+'%</div>';
+h+='<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">KPI:'+pm.kpiPct+'%</div>';
+h+='</div>';
+});
+// Quarterly summary cards
+QUARTERS.forEach(q=>{
+const qMonths=personMonths.filter(pm=>q.months.includes(pm.key));
+if(qMonths.length===0)return;
+const qAvg=Math.round(qMonths.reduce((s,m)=>s+m.weighted,0)/qMonths.length*10)/10;
+const qBonus=qMonths.reduce((s,m)=>s+m.bonus,0);
+const qColor=qAvg>=90?'var(--success)':qAvg>=70?'var(--gold)':qAvg>=50?'var(--warning)':'var(--danger)';
+h+='<div style="background:rgba(212,168,67,0.08);padding:8px 10px;border-radius:6px;text-align:center;border:1px solid rgba(212,168,67,0.2);min-width:80px;flex:0 0 auto;">';
+h+='<div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:2px;">'+q.label+'</div>';
+h+='<div style="font-size:18px;font-weight:700;color:'+qColor+';">'+qAvg+'%</div>';
+h+='<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">'+fmt(qBonus)+'</div>';
+h+='</div>';
+});
+h+='</div></div>';
+});
+h+='</div></div>';
 // Monthly detail cards
 monthsData.forEach(md=>{
 if(!md.hasData)return;
