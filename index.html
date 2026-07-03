@@ -2104,6 +2104,7 @@ if(d.individual){for(const p in d.individual){const pd=d.individual[p];for(const
 if(d.ccTeam){for(const k in d.ccTeam){if(d.ccTeam[k])return true;}}
 if(d.adminTeam){for(const k in d.adminTeam){if(d.adminTeam[k])return true;}}
 if(d.perfRatings){for(const p in d.perfRatings){const pr=d.perfRatings[p];if(pr&&(pr.manualRating||pr.competencies)){if(pr.manualRating)return true;if(pr.competencies){for(const c in pr.competencies){if(pr.competencies[c])return true;}}}}}
+if(d.tlRatings){for(const p in d.tlRatings){const tl=d.tlRatings[p];if(tl){for(const r in tl){const rd=tl[r];if(rd&&rd.competencies){for(const c in rd.competencies){if(rd.competencies[c])return true;}}}}}}
 return false;
 }
 let perfDashTab='cc';
@@ -2124,7 +2125,7 @@ const monthsData=[];
 MONTHS.forEach(mo=>{
 const d=getMonthData(mo.key);
 if(!d.perfRatings)d.perfRatings={};
-let exceeds=0,meets=0,needs=0,below=0,totalWeighted=0,totalBonus=0;
+let exceeds=0,meets=0,needs=0,below=0,totalWeighted=0,totalBonus=0,membersWithData=0;
 const memberDetails=[];
 members.forEach(person=>{
 const ws=calcWeightedPerfScore(mo.key,person);
@@ -2138,18 +2139,20 @@ else if(effectiveRating.includes('Meets'))meets++;
 else if(effectiveRating.includes('Needs'))needs++;
 else if(effectiveRating.includes('Below'))below++;
 totalWeighted+=ws.weighted;
+membersWithData++;
 }
 totalBonus+=finalBonus;
 memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating,noData:ws.noData});
 });
-const avgWeighted=members.length>0?Math.round(totalWeighted/members.length):0;
-monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key)});
+const avgWeighted=membersWithData>0?Math.round(totalWeighted/membersWithData):0;
+const teamHasData=membersWithData>0;
+monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key),teamHasData});
 });
 // Team average trend overview
 h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Team Average Trend</h3>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:15px;">';
 monthsData.forEach(md=>{
-if(!md.hasData)return;
+if(!md.teamHasData)return;
 const topColor=md.avgWeighted>=90?'var(--success)':md.avgWeighted>=70?'var(--gold)':md.avgWeighted>=50?'var(--warning)':'var(--danger)';
 h+='<div style="background:var(--navy-dark);padding:10px;border-radius:8px;text-align:center;border-top:3px solid '+topColor+';">';
 h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">'+md.label.split(' ')[0]+'</div>';
@@ -2166,9 +2169,9 @@ h+='<div style="display:flex;flex-direction:column;gap:12px;">';
 members.forEach(person=>{
 const personMonths=[];
 monthsData.forEach(md=>{
-if(!md.hasData)return;
+if(!md.teamHasData)return;
 const pm=md.memberDetails.find(m=>m.person===person);
-if(pm)personMonths.push({key:md.key,label:md.label.split(' ')[0],weighted:pm.weightedScore,rating:pm.effectiveRating,bonus:pm.finalBonus,kpiPct:pm.kpiPct});
+if(pm&&!pm.noData)personMonths.push({key:md.key,label:md.label.split(' ')[0],weighted:pm.weightedScore,rating:pm.effectiveRating,bonus:pm.finalBonus,kpiPct:pm.kpiPct});
 });
 if(personMonths.length===0)return;
 h+='<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;">';
@@ -2201,7 +2204,7 @@ h+='</div></div>';
 h+='</div></div>';
 // Monthly detail cards
 monthsData.forEach(md=>{
-if(!md.hasData)return;
+if(!md.teamHasData)return;
 h+='<div class="form-section" style="margin-bottom:20px;">';
 h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--gold);"><i class="fas fa-calendar-alt"></i> '+md.label+'</span>';
 h+='<span style="font-size:13px;color:var(--text-muted);">Avg Weighted: '+md.avgWeighted+'% | Total Bonus: '+fmt(md.totalBonus)+'</span></h3>';
@@ -2223,6 +2226,7 @@ h+='</div>';
 }
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">';
 md.memberDetails.forEach(m=>{
+if(m.noData&&!m.manualOverride)return;
 const rColor=m.effectiveRating.includes('Exceeds')?'var(--success)':m.effectiveRating.includes('Meets')?'var(--gold)':m.effectiveRating.includes('Needs')?'var(--warning)':'var(--danger)';
 const shortRating=m.effectiveRating.includes('Exceeds')?'Exceeds':m.effectiveRating.includes('Meets')?'Meets':m.effectiveRating.includes('Needs')?'Needs Imp.':'Below';
 h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;border-left:4px solid '+rColor+';">';
