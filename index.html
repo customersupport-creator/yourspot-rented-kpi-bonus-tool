@@ -138,6 +138,8 @@ const ADMIN_MEMBERS=['Joan','Lovely','Jian'];
 const DUAL_TEAM_MEMBERS=['Hazel','Kenan'];
 const MEMBER_TITLES={Kenan:'Senior Supervisor',Hazel:'Junior Supervisor'};
 const ALL_MEMBERS=[...CC_MEMBERS,...DUAL_TEAM_MEMBERS,...ADMIN_MEMBERS];
+const COMPETENCIES=['Independence','Process Knowledge','Decision Making','Accuracy/Error Prevention','Communication/Updates','Initiative/Ownership','Adaptability/Problem Solving'];
+const COMP_LABELS={1:'Poor',2:'Below',3:'Meets',4:'Exceeds',5:'Outstanding'};
 const MONTHS=[
 {key:'2026-04',label:'April 2026'},{key:'2026-05',label:'May 2026'},{key:'2026-06',label:'June 2026'},
 {key:'2026-07',label:'July 2026'},{key:'2026-08',label:'August 2026'},{key:'2026-09',label:'September 2026'},
@@ -671,6 +673,51 @@ if(consecutiveLow>=3)return'PIP (100% deduction)';
 if(consecutiveLow===2)return'50% team bonus deduction';
 if(consecutiveLow===1)return'25% team bonus deduction';
 return'None';
+}
+
+function getTowScore(m,person){
+const d=getMonthData(m);
+const personDeds=(d.deductions||[]).filter(ded=>ded.person===person);
+const count=personDeds.length;
+if(count===0)return 5;
+if(count===1)return 4;
+if(count===2)return 3;
+if(count<=4)return 2;
+return 1;
+}
+
+function getCompetencyRatings(m,person){
+const d=getMonthData(m);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[person])return{};
+return d.perfRatings[person].competencies||{};
+}
+
+function calcWeightedPerfScore(m,person){
+const kpis=getKPIsForPerson(person);
+const d=getMonthData(m);
+const pData=d.individual[person]||{};
+const indTotal=getIndividualTotal(m,person);
+const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
+const kpiPct=maxTotal>0?Math.min(indTotal/maxTotal*100,100):0;
+const towScore=getTowScore(m,person);
+const towNorm=(towScore-1)/4*100;
+const comp=getCompetencyRatings(m,person);
+let compSum=0;let compCount=0;
+COMPETENCIES.forEach(c=>{
+const v=parseFloat(comp[c])||0;
+if(v>0){compSum+=(v-1)/4*100;compCount++;}
+});
+const compAvg=compCount>0?compSum/compCount:50;
+const weighted=kpiPct*0.40+towNorm*0.10+compAvg*0.50;
+return{weighted:Math.round(weighted*100)/100,kpiPct:Math.round(kpiPct),towScore,towNorm:Math.round(towNorm),compAvg:Math.round(compAvg),compCount};
+}
+
+function getAutoRatingFromWeighted(score){
+if(score>=90)return{rating:'Exceeds Expectations',color:'var(--success)'};
+if(score>=70)return{rating:'Meets Expectations',color:'var(--gold)'};
+if(score>=50)return{rating:'Needs Improvement',color:'var(--warning)'};
+return{rating:'Below Expectations',color:'var(--danger)'};
 }
 
 function navigate(page){
@@ -1635,22 +1682,19 @@ const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
 const overallPct=maxTotal>0?Math.round(indTotal/maxTotal*100):0;
 const finalBonus=getFinalBonus(currentMonth,person);
 const team=getTeamForPerson(person);
-// Auto rating
-let autoRating='N/A';let autoColor='var(--text-muted)';
-if(kpis.length>0){
-if(overallPct>=90){autoRating='Exceeds Expectations';autoColor='var(--success)';}
-else if(overallPct>=70){autoRating='Meets Expectations';autoColor='var(--gold)';}
-else if(overallPct>=50){autoRating='Needs Improvement';autoColor='var(--warning)';}
-else{autoRating='Below Expectations';autoColor='var(--danger)';}
-}
+// Weighted performance score
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
+const autoRating=autoInfo.rating;const autoColor=autoInfo.color;
 // Top/Low performer status
 const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
 const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
 const consecLow=getConsecutiveLow(person,currentMonth);
 const sanction=getSanction(consecLow);
 // Manual rating data
-if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:''};
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{},towScoreOverride:''};
 const pr=d.perfRatings[person];
+if(!pr.competencies)pr.competencies={};
 const manualVal=pr.manualRating||'';
 // Met vs below KPIs
 const metCount=kpis.filter(k=>(parseFloat(pData[k.id])||0)>=k.max).length;
@@ -1659,11 +1703,45 @@ h+='<div class="form-section coaching-print" style="margin-bottom:20px;">';
 h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><span><i class="fas fa-user-circle"></i> '+person+(MEMBER_TITLES[person]?' <span style="font-size:12px;color:var(--text-muted);font-weight:400;">('+MEMBER_TITLES[person]+')</span>':'')+'</span>';
 h+='<span style="font-size:13px;color:var(--text-muted);font-weight:400;">'+monthLabel+'</span></h3>';
 // Summary cards row
-h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:15px;">';
-h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:20px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">'+fmt(indTotal)+' / '+fmt(maxTotal)+'</div></div>';
-h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+autoColor+';">'+autoRating+'</div><div style="font-size:11px;color:var(--text-muted);">Based on KPI %</div></div>';
-h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:20px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px;">';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:'+autoColor+';">'+ws.weighted.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text-muted);">9-factor weighted</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">40% weight</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+autoColor+';">'+autoRating+'</div><div style="font-size:11px;color:var(--text-muted);">Based on weighted</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Status</div><div style="font-size:14px;font-weight:700;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--text)')+';">'+(isTop?'<i class="fas fa-trophy"></i> Top':isLow?'<i class="fas fa-exclamation-triangle"></i> Low':'Standard')+'</div><div style="font-size:11px;color:var(--text-muted);">'+sanction+'</div></div>';
+h+='</div>';
+// Weighted Score Breakdown
+h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
+h+='<strong style="color:var(--gold);font-size:13px;"><i class="fas fa-balance-scale"></i> Weighted Score Breakdown</strong>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">';
+h+='<div style="font-size:12px;color:var(--text-muted);">KPI (40%): <strong style="color:var(--text);">'+ws.kpiPct+'%</strong> → <span style="color:var(--gold);">'+(ws.kpiPct*0.4).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">Tow Deductions (10%): <strong style="color:var(--text);">'+ws.towScore+'/5</strong> → <span style="color:var(--gold);">'+(ws.towNorm*0.1).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (50%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.5).toFixed(1)+'</span></div>';
+h+='</div></div>';
+// Competency Ratings
+h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-clipboard-check"></i> Competency Ratings</strong> <span style="font-size:11px;color:var(--text-muted);">(1=Poor, 2=Below, 3=Meets, 4=Exceeds, 5=Outstanding)</span>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-top:8px;">';
+COMPETENCIES.forEach(comp=>{
+const val=pr.competencies[comp]||'';
+h+='<div style="display:flex;align-items:center;gap:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);min-width:180px;">'+comp+'</label>';
+h+='<select style="width:80px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:13px;" onchange="updatePerfCompetency(\''+person+'\',\''+comp+'\',this.value)">';
+h+='<option value=""'+(val===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(val==i?' selected':'')+'>'+i+' - '+COMP_LABELS[i]+'</option>';}
+h+='</select>';
+if(val){const vColor=val>=4?'var(--success)':val>=3?'var(--gold)':val>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:11px;font-weight:700;color:'+vColor+';min-width:20px;">'+val+'/5</span>';}
+h+='</div>';
+});
+h+='</div>';
+// Invalid Tow Deductions score
+const towS=getTowScore(currentMonth,person);
+const towDedCount=(d.deductions||[]).filter(ded=>ded.person===person).length;
+const towColor=towS>=4?'var(--success)':towS>=3?'var(--gold)':towS>=2?'var(--warning)':'var(--danger)';
+h+='<div style="display:flex;align-items:center;gap:12px;margin-top:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);"><i class="fas fa-truck"></i> Invalid Tow Deductions Score</label>';
+h+='<span style="font-size:12px;color:var(--text-muted);">'+towDedCount+' invalid tow'+(towDedCount!==1?'s':'')+'</span>';
+h+='<span style="font-size:14px;font-weight:700;color:'+towColor+';">'+towS+'/5</span>';
+h+='</div>';
 h+='</div>';
 // KPI breakdown table
 if(kpis.length>0){
@@ -1705,7 +1783,7 @@ const effectiveRating=manualVal||autoRating;
 const effColor=effectiveRating==='Exceeds Expectations'?'var(--success)':effectiveRating==='Meets Expectations'?'var(--gold)':effectiveRating==='Needs Improvement'?'var(--warning)':'var(--danger)';
 h+='<div style="margin-top:12px;padding:10px 15px;background:var(--navy-dark);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid '+effColor+';">';
 h+='<span style="font-size:13px;color:var(--text-muted);">Effective Rating:</span>';
-h+='<span style="font-weight:700;color:'+effColor+';font-size:15px;">'+effectiveRating+(manualVal?' <i class="fas fa-pen" style="font-size:10px;" title="Manually overridden"></i>':'')+'</span>';
+h+='<span style="font-weight:700;color:'+effColor+';font-size:15px;">'+effectiveRating+(manualVal?' <i class="fas fa-pen" style="font-size:10px;" title="Manually overridden"></i>':'')+'  <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(Weighted: '+ws.weighted.toFixed(1)+'%)</span></span>';
 h+='</div>';
 h+='</div>';
 });
@@ -1715,8 +1793,16 @@ document.getElementById('content').innerHTML=h;
 function updatePerfRating(person,field,val){
 const d=getMonthData(currentMonth);
 if(!d.perfRatings)d.perfRatings={};
-if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:''};
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[person].competencies)d.perfRatings[person].competencies={};
 d.perfRatings[person][field]=val;
+}
+function updatePerfCompetency(person,comp,val){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[person].competencies)d.perfRatings[person].competencies={};
+d.perfRatings[person].competencies[comp]=val?parseInt(val):'';
 }
 function savePerfRating(){saveData();toast('Performance ratings saved');}
 function exportPerfRatingCSV(){
@@ -1725,23 +1811,19 @@ if(!d.perfRatings)d.perfRatings={};
 const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
 const dualF=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
 const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualF]:[...ADMIN_MEMBERS,...dualF];
-let csv='Team Member,Team,Individual KPI $,Max KPI $,KPI %,Auto Rating,Manager Rating,Effective Rating,Final Bonus,Status,Key Strengths,Development Areas,Action Items,Next Review\n';
+let csv='Team Member,Team,Weighted Score,Individual KPI %,Tow Score,'+COMPETENCIES.join(',')+',Auto Rating,Manager Rating,Effective Rating,Final Bonus,Status,Key Strengths,Development Areas,Action Items,Next Review\n';
 members.forEach(person=>{
-const kpis=getKPIsForPerson(person);
-const pData=d.individual[person]||{};
-const indTotal=getIndividualTotal(currentMonth,person);
-const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
-const overallPct=maxTotal>0?Math.round(indTotal/maxTotal*100):0;
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
 const finalBonus=getFinalBonus(currentMonth,person);
 const team=getTeamForPerson(person);
-let autoRating='N/A';
-if(kpis.length>0){if(overallPct>=90)autoRating='Exceeds Expectations';else if(overallPct>=70)autoRating='Meets Expectations';else if(overallPct>=50)autoRating='Needs Improvement';else autoRating='Below Expectations';}
 const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
 const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
 const pr=d.perfRatings[person]||{};
-const effectiveRating=pr.manualRating||autoRating;
+const comp=pr.competencies||{};
+const effectiveRating=pr.manualRating||autoInfo.rating;
 const esc=s=>'"'+(s||'').replace(/"/g,'""')+'"';
-csv+=esc(person)+','+esc(perfRatingTab==='cc'?'CC Team':'Admin Team')+','+indTotal.toFixed(2)+','+maxTotal.toFixed(2)+','+overallPct+'%,'+esc(autoRating)+','+esc(pr.manualRating||'(Auto)')+','+esc(effectiveRating)+','+finalBonus.toFixed(2)+','+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+','+esc(pr.strengths)+','+esc(pr.development)+','+esc(pr.actionItems)+','+esc(pr.nextReview)+'\n';
+csv+=esc(person)+','+esc(perfRatingTab==='cc'?'CC Team':'Admin Team')+','+ws.weighted.toFixed(1)+'%,'+ws.kpiPct+'%,'+ws.towScore+'/5,'+COMPETENCIES.map(c=>(comp[c]||'-')+'/5').join(',')+','+esc(autoInfo.rating)+','+esc(pr.manualRating||'(Auto)')+','+esc(effectiveRating)+','+finalBonus.toFixed(2)+','+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+','+esc(pr.strengths)+','+esc(pr.development)+','+esc(pr.actionItems)+','+esc(pr.nextReview)+'\n';
 });
 const blob=new Blob([csv],{type:'text/csv'});
 const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Performance_Rating_'+(perfRatingTab==='cc'?'CC':'Admin')+'_'+currentMonth+'.csv';a.click();
@@ -1769,23 +1851,30 @@ html+='<h1><img src="" style="display:none;">Performance Rating Report — '+tea
 members.forEach(person=>{
 const kpis=getKPIsForPerson(person);
 const pData=d.individual[person]||{};
-const indTotal=getIndividualTotal(currentMonth,person);
-const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
-const overallPct=maxTotal>0?Math.round(indTotal/maxTotal*100):0;
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
 const finalBonus=getFinalBonus(currentMonth,person);
 const team=getTeamForPerson(person);
-let autoRating='N/A';
-if(kpis.length>0){if(overallPct>=90)autoRating='Exceeds Expectations';else if(overallPct>=70)autoRating='Meets Expectations';else if(overallPct>=50)autoRating='Needs Improvement';else autoRating='Below Expectations';}
 const pr=d.perfRatings[person]||{};
-const effectiveRating=pr.manualRating||autoRating;
+const comp=pr.competencies||{};
+const effectiveRating=pr.manualRating||autoInfo.rating;
 const ratingClass=effectiveRating.includes('Exceeds')?'exceeds':effectiveRating.includes('Meets')?'meets':effectiveRating.includes('Needs')?'needs':'below';
 const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
 const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
 html+='<div class="member"><h2>'+person+(MEMBER_TITLES[person]?' ('+MEMBER_TITLES[person]+')':'')+'</h2>';
-html+='<div class="cards"><div class="card"><div class="lbl">KPI Score</div><div class="val">'+overallPct+'%</div><div class="lbl">$'+indTotal.toFixed(2)+' / $'+maxTotal.toFixed(2)+'</div></div>';
+html+='<div class="cards"><div class="card"><div class="lbl">Weighted Score</div><div class="val">'+ws.weighted.toFixed(1)+'%</div><div class="lbl">KPI '+ws.kpiPct+'% | Tow '+ws.towScore+'/5</div></div>';
 html+='<div class="card"><div class="lbl">Final Bonus</div><div class="val">$'+finalBonus.toFixed(2)+'</div></div>';
 html+='<div class="card"><div class="lbl">Status</div><div class="val">'+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+'</div></div>';
 html+='<div class="card"><div class="lbl">Rating</div><div class="rating '+ratingClass+'">'+effectiveRating+(pr.manualRating?' *':'')+'</div></div></div>';
+// Competency ratings table
+html+='<table><tr><th>Competency / Factor</th><th>Score</th><th>Weight</th></tr>';
+html+='<tr><td>Individual KPI</td><td style="font-weight:700;">'+ws.kpiPct+'%</td><td>40%</td></tr>';
+html+='<tr><td>Invalid Tow Deductions</td><td style="font-weight:700;">'+ws.towScore+'/5</td><td>10%</td></tr>';
+COMPETENCIES.forEach(c=>{
+const v=comp[c]||'-';
+html+='<tr><td>'+c+'</td><td style="font-weight:700;">'+v+'/5</td><td>7.14%</td></tr>';
+});
+html+='</table>';
 if(kpis.length>0){
 html+='<table><tr><th>KPI</th><th>Max</th><th>Actual</th><th>%</th></tr>';
 kpis.forEach(kpi=>{
@@ -1829,58 +1918,45 @@ const monthsData=[];
 MONTHS.forEach(mo=>{
 const d=getMonthData(mo.key);
 if(!d.perfRatings)d.perfRatings={};
-let exceeds=0,meets=0,needs=0,below=0,totalPct=0,totalBonus=0;
+let exceeds=0,meets=0,needs=0,below=0,totalWeighted=0,totalBonus=0;
 const memberDetails=[];
 members.forEach(person=>{
-const kpis=getKPIsForPerson(person);
-const pData=d.individual[person]||{};
-const indTotal=getIndividualTotal(mo.key,person);
-const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
-const overallPct=maxTotal>0?Math.round(indTotal/maxTotal*100):0;
+const ws=calcWeightedPerfScore(mo.key,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
 const finalBonus=getFinalBonus(mo.key,person);
-let autoRating='N/A';
-if(kpis.length>0){
-if(overallPct>=90)autoRating='Exceeds Expectations';
-else if(overallPct>=70)autoRating='Meets Expectations';
-else if(overallPct>=50)autoRating='Needs Improvement';
-else autoRating='Below Expectations';
-}
 const pr=(d.perfRatings[person])||{};
-const effectiveRating=pr.manualRating||autoRating;
+const effectiveRating=pr.manualRating||autoInfo.rating;
 if(effectiveRating.includes('Exceeds'))exceeds++;
 else if(effectiveRating.includes('Meets'))meets++;
 else if(effectiveRating.includes('Needs'))needs++;
 else if(effectiveRating.includes('Below'))below++;
-totalPct+=overallPct;
+totalWeighted+=ws.weighted;
 totalBonus+=finalBonus;
-memberDetails.push({person,overallPct,effectiveRating,finalBonus,autoRating,manualOverride:!!pr.manualRating});
+memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating});
 });
-const avgPct=members.length>0?Math.round(totalPct/members.length):0;
-monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgPct,totalBonus,memberDetails,hasData:totalPct>0||totalBonus>0});
+const avgWeighted=members.length>0?Math.round(totalWeighted/members.length):0;
+monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:totalWeighted>0||totalBonus>0});
 });
 // Overall trend chart placeholder
 h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Rating Trend Overview</h3>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:15px;">';
-// Summary row for quick glance
 monthsData.forEach(md=>{
 if(!md.hasData)return;
-const topColor=md.avgPct>=90?'var(--success)':md.avgPct>=70?'var(--gold)':md.avgPct>=50?'var(--warning)':'var(--danger)';
+const topColor=md.avgWeighted>=90?'var(--success)':md.avgWeighted>=70?'var(--gold)':md.avgWeighted>=50?'var(--warning)':'var(--danger)';
 h+='<div style="background:var(--navy-dark);padding:10px;border-radius:8px;text-align:center;border-top:3px solid '+topColor+';">';
 h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">'+md.label.split(' ')[0]+'</div>';
-h+='<div style="font-size:22px;font-weight:700;color:'+topColor+';">'+md.avgPct+'%</div>';
-h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Avg KPI</div>';
+h+='<div style="font-size:22px;font-weight:700;color:'+topColor+';">'+md.avgWeighted+'%</div>';
+h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Avg Weighted</div>';
 h+='</div>';
 });
 h+='</div>';
-// Chart canvas for trend
 h+='</div>';
 // Monthly detail cards
 monthsData.forEach(md=>{
 if(!md.hasData)return;
 h+='<div class="form-section" style="margin-bottom:20px;">';
 h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--gold);"><i class="fas fa-calendar-alt"></i> '+md.label+'</span>';
-h+='<span style="font-size:13px;color:var(--text-muted);">Avg KPI: '+md.avgPct+'% | Total Bonus: '+fmt(md.totalBonus)+'</span></h3>';
-// Rating distribution bar
+h+='<span style="font-size:13px;color:var(--text-muted);">Avg Weighted: '+md.avgWeighted+'% | Total Bonus: '+fmt(md.totalBonus)+'</span></h3>';
 const total=md.exceeds+md.meets+md.needs+md.below;
 if(total>0){
 h+='<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">';
@@ -1889,7 +1965,6 @@ h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:i
 h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--warning);"></span><span style="font-size:12px;color:var(--text-muted);">Needs Improvement: <strong style="color:var(--warning);">'+md.needs+'</strong></span></div>';
 h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--danger);"></span><span style="font-size:12px;color:var(--text-muted);">Below: <strong style="color:var(--danger);">'+md.below+'</strong></span></div>';
 h+='</div>';
-// Stacked bar
 const ePct=Math.round(md.exceeds/total*100);const mPct=Math.round(md.meets/total*100);const nPct=Math.round(md.needs/total*100);const bPct=100-ePct-mPct-nPct;
 h+='<div style="display:flex;height:20px;border-radius:10px;overflow:hidden;margin-bottom:12px;">';
 if(ePct>0)h+='<div style="width:'+ePct+'%;background:var(--success);" title="Exceeds '+md.exceeds+'"></div>';
@@ -1898,7 +1973,6 @@ if(nPct>0)h+='<div style="width:'+nPct+'%;background:var(--warning);" title="Nee
 if(bPct>0)h+='<div style="width:'+bPct+'%;background:var(--danger);" title="Below '+md.below+'"></div>';
 h+='</div>';
 }
-// Individual member cards grid
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">';
 md.memberDetails.forEach(m=>{
 const rColor=m.effectiveRating.includes('Exceeds')?'var(--success)':m.effectiveRating.includes('Meets')?'var(--gold)':m.effectiveRating.includes('Needs')?'var(--warning)':'var(--danger)';
@@ -1909,12 +1983,12 @@ h+='<span style="font-weight:700;font-size:14px;color:var(--text);">'+m.person+'
 h+='<span style="font-size:11px;font-weight:600;color:'+rColor+';background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:10px;">'+shortRating+(m.manualOverride?' <i class="fas fa-pen" style="font-size:8px;"></i>':'')+'</span>';
 h+='</div>';
 h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
-h+='<div><span style="font-size:20px;font-weight:700;color:'+rColor+';">'+m.overallPct+'%</span><span style="font-size:11px;color:var(--text-muted);margin-left:4px;">KPI</span></div>';
+h+='<div><span style="font-size:20px;font-weight:700;color:'+rColor+';">'+m.weightedScore.toFixed(1)+'%</span><span style="font-size:11px;color:var(--text-muted);margin-left:4px;">Weighted</span></div>';
 h+='<div style="text-align:right;"><span style="font-size:15px;font-weight:700;color:var(--gold);">'+fmt(m.finalBonus)+'</span><div style="font-size:10px;color:var(--text-muted);">Bonus</div></div>';
 h+='</div>';
-// Mini progress bar
-h+='<div style="margin-top:6px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">';
-h+='<div style="height:100%;width:'+Math.min(m.overallPct,100)+'%;background:'+rColor+';border-radius:2px;"></div>';
+h+='<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">KPI: '+m.kpiPct+'%</div>';
+h+='<div style="margin-top:4px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">';
+h+='<div style="height:100%;width:'+Math.min(m.weightedScore,100)+'%;background:'+rColor+';border-radius:2px;"></div>';
 h+='</div>';
 h+='</div>';
 });
@@ -1987,6 +2061,34 @@ h+='<strong style="color:var(--gold);"><i class="fas fa-lightbulb"></i> Auto-Gen
 h+='<span style="color:var(--success);font-weight:600;">Strengths:</span> '+autoStrengths+'<br>';
 h+='<span style="color:var(--danger);font-weight:600;">Focus Areas:</span> '+autoImprovements;
 h+='</div>';
+// Competency Ratings & Weighted Score in Coaching Card
+const cws=calcWeightedPerfScore(currentMonth,coachingPerson);
+const cAutoInfo=getAutoRatingFromWeighted(cws.weighted);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[coachingPerson])d.perfRatings[coachingPerson]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[coachingPerson].competencies)d.perfRatings[coachingPerson].competencies={};
+const cComp=d.perfRatings[coachingPerson].competencies;
+h+='<div style="margin:20px 0 15px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-clipboard-check"></i> Competency Ratings & Weighted Performance</h4>';
+h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:22px;font-weight:700;color:'+cAutoInfo.color+';">'+cws.weighted.toFixed(1)+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">KPI (40%)</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+cws.kpiPct+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Tow (10%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.towScore+'/5</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Comp Avg (50%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.compAvg+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+cAutoInfo.color+';">'+cAutoInfo.rating+'</div></div>';
+h+='</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;">';
+COMPETENCIES.forEach(comp=>{
+const cVal=cComp[comp]||'';
+h+='<div style="display:flex;align-items:center;gap:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);min-width:180px;">'+comp+'</label>';
+h+='<select style="width:80px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:13px;" onchange="updateCoachingCompetency(\''+comp+'\',this.value)">';
+h+='<option value=""'+(cVal===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(cVal==i?' selected':'')+'>'+i+' - '+COMP_LABELS[i]+'</option>';}
+h+='</select>';
+if(cVal){const cvColor=cVal>=4?'var(--success)':cVal>=3?'var(--gold)':cVal>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:11px;font-weight:700;color:'+cvColor+';min-width:20px;">'+cVal+'/5</span>';}
+h+='</div>';
+});
+h+='</div></div>';
 h+='<div class="coaching-section" style="margin-top:20px;"><label>Strengths (Editable)</label><textarea onchange="updateCoaching(\'strengths\',this.value)">'+((c.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
 h+='<div class="coaching-section"><label>Areas for Improvement (Editable)</label><textarea onchange="updateCoaching(\'improvements\',this.value)">'+((c.improvements||'').replace(/</g,'&lt;'))+'</textarea></div>';
 h+='<div class="coaching-section"><label>Action Plan</label><textarea onchange="updateCoaching(\'actionPlan\',this.value)">'+((c.actionPlan||'').replace(/</g,'&lt;'))+'</textarea></div>';
@@ -1998,6 +2100,13 @@ document.getElementById('content').innerHTML=h;
 }
 
 function switchCoachPerson(p){coachingPerson=p;renderCoaching();}
+function updateCoachingCompetency(comp,val){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[coachingPerson])d.perfRatings[coachingPerson]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[coachingPerson].competencies)d.perfRatings[coachingPerson].competencies={};
+d.perfRatings[coachingPerson].competencies[comp]=val?parseInt(val):'';
+}
 function updateCoaching(field,val){
 const d=getMonthData(currentMonth);
 if(!d.coaching)d.coaching={};
