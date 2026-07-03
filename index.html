@@ -705,9 +705,26 @@ if(!d.perfRatings[person])return{};
 return d.perfRatings[person].competencies||{};
 }
 
+function personHasMonthData(m,person){
+const d=getMonthData(m);
+const pData=d.individual[person]||{};
+for(const k in pData){const v=pData[k];if(v!==undefined&&v!==null&&v!==''&&v!==0){if(Array.isArray(v)){if(v.length>0)return true;}else return true;}}
+const comp=getCompetencyRatings(m,person);
+for(const c in comp){if(comp[c])return true;}
+const pr=d.perfRatings&&d.perfRatings[person];
+if(pr&&pr.manualRating)return true;
+const tl=d.tlRatings&&d.tlRatings[person];
+if(tl){for(const r in tl){const rd=tl[r];if(rd&&rd.competencies){for(const c in rd.competencies){if(rd.competencies[c])return true;}}}}
+return false;
+}
+
 function calcWeightedPerfScore(m,person){
 const kpis=getKPIsForPerson(person);
 const d=getMonthData(m);
+// For Jul-Dec 2026, return no-data if nothing entered
+if(m>='jul_2026'&&!personHasMonthData(m,person)){
+return{weighted:0,kpiPct:0,towScore:0,towNorm:0,compAvg:0,compCount:0,noData:true};
+}
 const pData=d.individual[person]||{};
 const indTotal=getIndividualTotal(m,person);
 const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
@@ -722,7 +739,7 @@ if(v>0){compSum+=(v-1)/4*100;compCount++;}
 });
 const compAvg=compCount>0?compSum/compCount:50;
 const weighted=kpiPct*0.50+towNorm*0.10+compAvg*0.40;
-return{weighted:Math.round(weighted*100)/100,kpiPct:Math.round(kpiPct),towScore,towNorm:Math.round(towNorm),compAvg:Math.round(compAvg),compCount};
+return{weighted:Math.round(weighted*100)/100,kpiPct:Math.round(kpiPct),towScore,towNorm:Math.round(towNorm),compAvg:Math.round(compAvg),compCount,noData:false};
 }
 
 function getAutoRatingFromWeighted(score){
@@ -1869,13 +1886,20 @@ h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><
 h+='<span style="font-size:13px;color:var(--text-muted);font-weight:400;">'+monthLabel+'</span></h3>';
 // Summary cards row
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px;">';
+if(ws.noData){
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:var(--text-muted);">—</div><div style="font-size:11px;color:var(--text-muted);">No data yet</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:var(--text-muted);">—</div><div style="font-size:11px;color:var(--text-muted);">No data yet</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
+}else{
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:'+autoColor+';">'+ws.weighted.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text-muted);">9-factor weighted</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">50% weight</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+autoColor+';">'+autoRating+'</div><div style="font-size:11px;color:var(--text-muted);">Based on weighted</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
+}
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Status</div><div style="font-size:14px;font-weight:700;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--text)')+';">'+(isTop?'<i class="fas fa-trophy"></i> Top':isLow?'<i class="fas fa-exclamation-triangle"></i> Low':'Standard')+'</div><div style="font-size:11px;color:var(--text-muted);">'+sanction+'</div></div>';
 h+='</div>';
 // Weighted Score Breakdown
+if(!ws.noData){
 h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
 h+='<strong style="color:var(--gold);font-size:13px;"><i class="fas fa-balance-scale"></i> Weighted Score Breakdown</strong>';
 h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">';
@@ -1883,6 +1907,11 @@ h+='<div style="font-size:12px;color:var(--text-muted);">KPI (50%): <strong styl
 h+='<div style="font-size:12px;color:var(--text-muted);">Tow Deductions (10%): <strong style="color:var(--text);">'+ws.towScore+'/5</strong> → <span style="color:var(--gold);">'+(ws.towNorm*0.1).toFixed(1)+'</span></div>';
 h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (40%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.4).toFixed(1)+'</span></div>';
 h+='</div></div>';
+}else{
+h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
+h+='<div style="font-size:12px;color:var(--text-muted);text-align:center;"><i class="fas fa-info-circle"></i> No data entered yet for this month. Weighted scores and ratings will compute once KPIs, competencies, or TL ratings are submitted.</div>';
+h+='</div>';
+}
 // Competency Ratings
 const isTLFed=currentMonth>='jul_2026'&&TL_RATED_MEMBERS.includes(person);
 const tlAvgScores=isTLFed?getTLRatings(currentMonth,person):{};
@@ -1952,7 +1981,7 @@ const effectiveRating=manualVal||autoRating;
 const effColor=effectiveRating==='Exceeds Expectations'?'var(--success)':effectiveRating==='Meets Expectations'?'var(--gold)':effectiveRating==='Needs Improvement'?'var(--warning)':'var(--danger)';
 h+='<div style="margin-top:12px;padding:10px 15px;background:var(--navy-dark);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid '+effColor+';">';
 h+='<span style="font-size:13px;color:var(--text-muted);">Effective Rating:</span>';
-h+='<span style="font-weight:700;color:'+effColor+';font-size:15px;">'+effectiveRating+(manualVal?' <i class="fas fa-pen" style="font-size:10px;" title="Manually overridden"></i>':'')+'  <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(Weighted: '+ws.weighted.toFixed(1)+'%)</span></span>';
+h+='<span style="font-weight:700;color:'+effColor+';font-size:15px;">'+(ws.noData&&!manualVal?'<span style="color:var(--text-muted);">No data yet</span>':effectiveRating+(manualVal?' <i class="fas fa-pen" style="font-size:10px;" title="Manually overridden"></i>':'')+'  <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(Weighted: '+(ws.noData?'—':ws.weighted.toFixed(1)+'%')+')</span>')+'</span>';
 h+='</div>';
 h+='</div>';
 });
@@ -2031,7 +2060,7 @@ const ratingClass=effectiveRating.includes('Exceeds')?'exceeds':effectiveRating.
 const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
 const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
 html+='<div class="member"><h2>'+person+(MEMBER_TITLES[person]?' ('+MEMBER_TITLES[person]+')':'')+'</h2>';
-html+='<div class="cards"><div class="card"><div class="lbl">Weighted Score</div><div class="val">'+ws.weighted.toFixed(1)+'%</div><div class="lbl">KPI '+ws.kpiPct+'% | Tow '+ws.towScore+'/5</div></div>';
+html+='<div class="cards"><div class="card"><div class="lbl">Weighted Score</div><div class="val">'+(ws.noData?'—':ws.weighted.toFixed(1)+'%')+'</div><div class="lbl">'+(ws.noData?'No data yet':'KPI '+ws.kpiPct+'% | Tow '+ws.towScore+'/5')+'</div></div>';
 html+='<div class="card"><div class="lbl">Final Bonus</div><div class="val">$'+finalBonus.toFixed(2)+'</div></div>';
 html+='<div class="card"><div class="lbl">Status</div><div class="val">'+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+'</div></div>';
 html+='<div class="card"><div class="lbl">Rating</div><div class="rating '+ratingClass+'">'+effectiveRating+(pr.manualRating?' *':'')+'</div></div></div>';
@@ -2102,14 +2131,16 @@ const ws=calcWeightedPerfScore(mo.key,person);
 const autoInfo=getAutoRatingFromWeighted(ws.weighted);
 const finalBonus=getFinalBonus(mo.key,person);
 const pr=(d.perfRatings[person])||{};
-const effectiveRating=pr.manualRating||autoInfo.rating;
+const effectiveRating=ws.noData&&!pr.manualRating?'—':pr.manualRating||autoInfo.rating;
+if(!ws.noData||pr.manualRating){
 if(effectiveRating.includes('Exceeds'))exceeds++;
 else if(effectiveRating.includes('Meets'))meets++;
 else if(effectiveRating.includes('Needs'))needs++;
 else if(effectiveRating.includes('Below'))below++;
 totalWeighted+=ws.weighted;
+}
 totalBonus+=finalBonus;
-memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating});
+memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating,noData:ws.noData});
 });
 const avgWeighted=members.length>0?Math.round(totalWeighted/members.length):0;
 monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key)});
@@ -2287,11 +2318,15 @@ if(!d.perfRatings[coachingPerson].competencies)d.perfRatings[coachingPerson].com
 const cComp=d.perfRatings[coachingPerson].competencies;
 h+='<div style="margin:20px 0 15px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-clipboard-check"></i> Competency Ratings & Weighted Performance</h4>';
 h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">';
+if(cws.noData){
+h+='<div style="text-align:center;width:100%;"><div style="font-size:12px;color:var(--text-muted);"><i class="fas fa-info-circle"></i> No data entered yet for this month.</div></div>';
+}else{
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:22px;font-weight:700;color:'+cAutoInfo.color+';">'+cws.weighted.toFixed(1)+'%</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">KPI (50%)</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+cws.kpiPct+'%</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Tow (10%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.towScore+'/5</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Comp Avg (40%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.compAvg+'%</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+cAutoInfo.color+';">'+cAutoInfo.rating+'</div></div>';
+}
 h+='</div>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;">';
 COMPETENCIES.forEach(comp=>{
