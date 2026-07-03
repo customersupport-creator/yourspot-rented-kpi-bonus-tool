@@ -709,7 +709,7 @@ const v=parseFloat(comp[c])||0;
 if(v>0){compSum+=(v-1)/4*100;compCount++;}
 });
 const compAvg=compCount>0?compSum/compCount:50;
-const weighted=kpiPct*0.40+towNorm*0.10+compAvg*0.50;
+const weighted=kpiPct*0.50+towNorm*0.10+compAvg*0.40;
 return{weighted:Math.round(weighted*100)/100,kpiPct:Math.round(kpiPct),towScore,towNorm:Math.round(towNorm),compAvg:Math.round(compAvg),compCount};
 }
 
@@ -1705,7 +1705,7 @@ h+='<span style="font-size:13px;color:var(--text-muted);font-weight:400;">'+mont
 // Summary cards row
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px;">';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:'+autoColor+';">'+ws.weighted.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text-muted);">9-factor weighted</div></div>';
-h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">40% weight</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">50% weight</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+autoColor+';">'+autoRating+'</div><div style="font-size:11px;color:var(--text-muted);">Based on weighted</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
 h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Status</div><div style="font-size:14px;font-weight:700;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--text)')+';">'+(isTop?'<i class="fas fa-trophy"></i> Top':isLow?'<i class="fas fa-exclamation-triangle"></i> Low':'Standard')+'</div><div style="font-size:11px;color:var(--text-muted);">'+sanction+'</div></div>';
@@ -1714,9 +1714,9 @@ h+='</div>';
 h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
 h+='<strong style="color:var(--gold);font-size:13px;"><i class="fas fa-balance-scale"></i> Weighted Score Breakdown</strong>';
 h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">';
-h+='<div style="font-size:12px;color:var(--text-muted);">KPI (40%): <strong style="color:var(--text);">'+ws.kpiPct+'%</strong> → <span style="color:var(--gold);">'+(ws.kpiPct*0.4).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">KPI (50%): <strong style="color:var(--text);">'+ws.kpiPct+'%</strong> → <span style="color:var(--gold);">'+(ws.kpiPct*0.5).toFixed(1)+'</span></div>';
 h+='<div style="font-size:12px;color:var(--text-muted);">Tow Deductions (10%): <strong style="color:var(--text);">'+ws.towScore+'/5</strong> → <span style="color:var(--gold);">'+(ws.towNorm*0.1).toFixed(1)+'</span></div>';
-h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (50%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.5).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (40%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.4).toFixed(1)+'</span></div>';
 h+='</div></div>';
 // Competency Ratings
 h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-clipboard-check"></i> Competency Ratings</strong> <span style="font-size:11px;color:var(--text-muted);">(1=Poor, 2=Below, 3=Meets, 4=Exceeds, 5=Outstanding)</span>';
@@ -1868,11 +1868,11 @@ html+='<div class="card"><div class="lbl">Status</div><div class="val">'+(isTop?
 html+='<div class="card"><div class="lbl">Rating</div><div class="rating '+ratingClass+'">'+effectiveRating+(pr.manualRating?' *':'')+'</div></div></div>';
 // Competency ratings table
 html+='<table><tr><th>Competency / Factor</th><th>Score</th><th>Weight</th></tr>';
-html+='<tr><td>Individual KPI</td><td style="font-weight:700;">'+ws.kpiPct+'%</td><td>40%</td></tr>';
+html+='<tr><td>Individual KPI</td><td style="font-weight:700;">'+ws.kpiPct+'%</td><td>50%</td></tr>';
 html+='<tr><td>Invalid Tow Deductions</td><td style="font-weight:700;">'+ws.towScore+'/5</td><td>10%</td></tr>';
 COMPETENCIES.forEach(c=>{
 const v=comp[c]||'-';
-html+='<tr><td>'+c+'</td><td style="font-weight:700;">'+v+'/5</td><td>7.14%</td></tr>';
+html+='<tr><td>'+c+'</td><td style="font-weight:700;">'+v+'/5</td><td>5.71%</td></tr>';
 });
 html+='</table>';
 if(kpis.length>0){
@@ -1900,6 +1900,14 @@ html+='</body></html>';
 const win=window.open('','_blank');win.document.write(html);win.document.close();win.print();
 }
 
+function monthHasRealData(mk){
+const d=getMonthData(mk);
+if(d.individual){for(const p in d.individual){const pd=d.individual[p];for(const k in pd){const v=pd[k];if(v!==undefined&&v!==null&&v!==''&&v!==0){if(Array.isArray(v)){if(v.length>0)return true;}else return true;}}}}
+if(d.ccTeam){for(const k in d.ccTeam){if(d.ccTeam[k])return true;}}
+if(d.adminTeam){for(const k in d.adminTeam){if(d.adminTeam[k])return true;}}
+if(d.perfRatings){for(const p in d.perfRatings){const pr=d.perfRatings[p];if(pr&&(pr.manualRating||pr.competencies)){if(pr.manualRating)return true;if(pr.competencies){for(const c in pr.competencies){if(pr.competencies[c])return true;}}}}}
+return false;
+}
 let perfDashTab='cc';
 function renderPerfDashboard(){
 const ccList=CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
@@ -1935,7 +1943,7 @@ totalBonus+=finalBonus;
 memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating});
 });
 const avgWeighted=members.length>0?Math.round(totalWeighted/members.length):0;
-monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:totalWeighted>0||totalBonus>0});
+monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key)});
 });
 // Overall trend chart placeholder
 h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Rating Trend Overview</h3>';
@@ -2071,9 +2079,9 @@ const cComp=d.perfRatings[coachingPerson].competencies;
 h+='<div style="margin:20px 0 15px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-clipboard-check"></i> Competency Ratings & Weighted Performance</h4>';
 h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:22px;font-weight:700;color:'+cAutoInfo.color+';">'+cws.weighted.toFixed(1)+'%</div></div>';
-h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">KPI (40%)</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+cws.kpiPct+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">KPI (50%)</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+cws.kpiPct+'%</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Tow (10%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.towScore+'/5</div></div>';
-h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Comp Avg (50%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.compAvg+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Comp Avg (40%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.compAvg+'%</div></div>';
 h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+cAutoInfo.color+';">'+cAutoInfo.rating+'</div></div>';
 h+='</div>';
 h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;">';
