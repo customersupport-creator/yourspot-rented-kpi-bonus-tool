@@ -1323,7 +1323,8 @@ if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.wee
 if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
-if(kpi.type==='per_unit')return parseFloat(val)||0;
+if(kpi.type==='per_unit')return (parseFloat(val)||0)*kpi.rate;
+if(kpi.type==='multi_rate'){if(!val||typeof val!=='object')return parseFloat(val)||0;let t=0;kpi.rates.forEach(r=>{t+=(parseFloat(val[r.id])||0)*r.rate;});return t;}
 if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
 if(kpi.type==='tier_time'){return parseFloat(val)||0;}
 if(kpi.type==='select'){return parseFloat(val)||0;}
@@ -2101,8 +2102,8 @@ const win=window.open('','_blank');win.document.write(html);win.document.close()
 function monthHasRealData(mk){
 const d=getMonthData(mk);
 if(d.individual){for(const p in d.individual){const pd=d.individual[p];for(const k in pd){const v=pd[k];if(v!==undefined&&v!==null&&v!==''&&v!==0){if(Array.isArray(v)){if(v.length>0)return true;}else return true;}}}}
-if(d.ccTeam){for(const k in d.ccTeam){if(d.ccTeam[k])return true;}}
-if(d.adminTeam){for(const k in d.adminTeam){if(d.adminTeam[k])return true;}}
+if(d.cc_team){for(const k in d.cc_team){if(d.cc_team[k])return true;}}
+if(d.admin_team){for(const k in d.admin_team){if(d.admin_team[k])return true;}}
 if(d.perfRatings){for(const p in d.perfRatings){const pr=d.perfRatings[p];if(pr&&(pr.manualRating||pr.competencies)){if(pr.manualRating)return true;if(pr.competencies){for(const c in pr.competencies){if(pr.competencies[c])return true;}}}}}
 if(d.tlRatings){for(const p in d.tlRatings){const tl=d.tlRatings[p];if(tl){for(const r in tl){const rd=tl[r];if(rd&&rd.competencies){for(const c in rd.competencies){if(rd.competencies[c])return true;}}}}}}
 return false;
