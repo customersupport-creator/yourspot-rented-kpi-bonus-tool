@@ -691,7 +691,7 @@ function getCompetencyRatings(m,person){
 const d=getMonthData(m);
 if(!d.perfRatings)d.perfRatings={};
 // For July 2026+, auto-populate from TL averaged scores for TL-rated members
-if(m>='jul_2026'&&TL_RATED_MEMBERS.includes(person)){
+if(m>='2026-07'&&TL_RATED_MEMBERS.includes(person)){
 const tlAvg=getTLRatings(m,person);
 const manual=(d.perfRatings[person]&&d.perfRatings[person].competencies)||{};
 const merged={};
@@ -722,7 +722,7 @@ function calcWeightedPerfScore(m,person){
 const kpis=getKPIsForPerson(person);
 const d=getMonthData(m);
 // For Jul-Dec 2026, return no-data if nothing entered
-if(m>='jul_2026'&&!personHasMonthData(m,person)){
+if(m>='2026-07'&&!personHasMonthData(m,person)){
 return{weighted:0,kpiPct:0,towScore:0,towNorm:0,compAvg:0,compCount:0,noData:true};
 }
 const pData=d.individual[person]||{};
@@ -1913,7 +1913,7 @@ h+='<div style="font-size:12px;color:var(--text-muted);text-align:center;"><i cl
 h+='</div>';
 }
 // Competency Ratings
-const isTLFed=currentMonth>='jul_2026'&&TL_RATED_MEMBERS.includes(person);
+const isTLFed=currentMonth>='2026-07'&&TL_RATED_MEMBERS.includes(person);
 const tlAvgScores=isTLFed?getTLRatings(currentMonth,person):{};
 h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-clipboard-check"></i> Competency Ratings</strong> <span style="font-size:11px;color:var(--text-muted);">(1=Poor, 2=Below, 3=Meets, 4=Exceeds, 5=Outstanding)</span>';
 if(isTLFed){h+='<div style="font-size:11px;color:var(--info);margin-top:4px;"><i class="fas fa-info-circle"></i> Auto-populated from Team Lead Coaching (averaged). Manual edits override.</div>';}
@@ -2160,7 +2160,7 @@ h+='</div>';
 h+='</div>';
 h+='</div>';
 // Individual rating trends with quarterly summaries
-const QUARTERS=[{label:'Q2',months:['apr_2026','may_2026','jun_2026']},{label:'Q3',months:['jul_2026','aug_2026','sep_2026']},{label:'Q4',months:['oct_2026','nov_2026','dec_2026']}];
+const QUARTERS=[{label:'Q2',months:['2026-04','2026-05','2026-06']},{label:'Q3',months:['2026-07','2026-08','2026-09']},{label:'Q4',months:['2026-10','2026-11','2026-12']}];
 h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-users"></i> '+teamLabel+' — Individual Rating Trends</h3>';
 h+='<div style="display:flex;flex-direction:column;gap:12px;">';
 members.forEach(person=>{
