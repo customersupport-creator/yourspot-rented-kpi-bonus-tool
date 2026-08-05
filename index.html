@@ -1550,7 +1550,7 @@ h+='<td style="color:'+(bd.towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">
 h+='<td>'+fmt(subtotalAfterDed)+'</td>';
 if(showCap){h+='<td style="font-size:12px;">'+fmt(bd.cap)+(bd.wasCapped?' <span style="color:var(--danger);font-size:10px;font-weight:600;">CAPPED</span>':'')+'</td>';}
 h+='<td style="color:'+(bd.topBonus>0?'var(--success)':'var(--text-muted)')+';">'+(bd.topBonus>0?'+'+fmt(bd.topBonus):'-')+'</td>';
-h+='<td style="font-weight:700;color:'+(bd.wasCapped?'var(--danger)':'var(--gold)')+';">'+fmt(finalBonus)+(bd.wasCapped?' <span style="font-size:10px;color:var(--text-muted);">(was '+fmt(bd.uncapped)+')</span>':'')+'</td>';
+h+='<td style="font-weight:700;color:'+(bd.wasCapped?'var(--danger)':'var(--gold)')+';">'+fmt(finalBonus)+'</td>';
 h+='</tr>';
 });
 const colSpan=showCap?8:7;
