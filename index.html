@@ -675,9 +675,9 @@ const adjTeamShare=teamShare*(1-lowDed);
 const isTop=(team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person);
 const topBonus=(isTop&&m>='2026-06')?25:0;
 let result;
-if(m>='2026-06'){const totalPreDed=indTotal+adjTeamShare+topBonus;const progDed=calcProgressiveDeduction(totalPreDed,personDeds.length);result=Math.max(0,totalPreDed-progDed.total);}
+if(m>='2026-06'){const totalPreDed=indTotal+adjTeamShare;const progDed=calcProgressiveDeduction(totalPreDed+topBonus,personDeds.length);result=Math.max(0,totalPreDed+topBonus-progDed.total);}
 else{const dedPct=personDeds.length*25;const netInd=indTotal*(1-Math.min(dedPct,100)/100);result=Math.max(0,netInd+adjTeamShare+topBonus);}
-if(m>='2026-07'){const cap=getMaxBonusCap(m,person);if(cap>0&&result>cap)result=cap;}
+if(m>='2026-07'){const cap=getMaxBonusCap(m,person);if(cap>0){const baseResult=result-topBonus;if(baseResult>cap)result=cap+topBonus;}}
 return result;
 }
 function getFinalBonusDetail(m,person){
@@ -703,8 +703,9 @@ const progDed=calcProgressiveDeduction(totalPreDed,personDeds.length);
 const towDedAmt=useP?progDed.total:(indTotal*(Math.min(personDeds.length*25,100)/100));
 let uncapped=useP?Math.max(0,totalPreDed-progDed.total):Math.max(0,indTotal*(1-Math.min(personDeds.length*25,100)/100)+adjTeamShare+topBonus);
 const cap=m>='2026-07'?getMaxBonusCap(m,person):0;
-const wasCapped=m>='2026-07'&&cap>0&&uncapped>cap;
-const final_=wasCapped?cap:uncapped;
+const baseUncapped=uncapped-topBonus;
+const wasCapped=m>='2026-07'&&cap>0&&baseUncapped>cap;
+const final_=wasCapped?cap+topBonus:uncapped;
 return{indTotal,teamShare,adjTeamShare,lowDed,topBonus,towDedAmt,towCount:personDeds.length,uncapped,cap,wasCapped,final:final_,rate:getEmployeeRate(m,person),isTop};
 }
 
@@ -1530,7 +1531,7 @@ h+='</tbody><tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;"
 // Employee Rates & Max Cap Section (July 2026+)
 if(currentMonth>='2026-07'){
 h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-dollar-sign"></i> Employee Rates & Max Bonus Cap</h4>';
-h+='<p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Max Bonus = Hourly Rate x '+BASE_HOURS+' hours x 10%. The cap includes all components (individual KPI, team share, top performer bonus) after deductions.</p>';
+h+='<p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Max Bonus = Hourly Rate x '+BASE_HOURS+' hours x 10%. The cap applies to base components (individual KPI + team share after deductions). Top Performer bonus ($25) is added on top of the cap.</p>';
 h+='<table><thead><tr><th>Employee</th><th>Rate ($/hr)</th><th>Base Pay ('+BASE_HOURS+'h)</th><th>Max Bonus (10%)</th></tr></thead><tbody>';
 ALL_MEMBERS.forEach(p=>{
 const rate=getEmployeeRate(currentMonth,p);
