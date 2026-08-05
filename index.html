@@ -1360,7 +1360,22 @@ const adRanked=ADMIN_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),dq:
 const adTopScore=adRanked.length>0?adRanked[0].s:0;
 const adHasTie=adRanked.filter(x=>!x.dq&&x.s===adTopScore).length>1;
 adRanked.forEach((r,i)=>{const isTied=!r.dq&&adHasTie&&r.s===adTopScore;h+='<span style="margin-right:10px;'+(r.dq?'text-decoration:line-through;color:var(--danger);':(isTied?'color:#ffab40;font-weight:bold;':''))+'">Admin '+(i+1)+'. '+r.p+' '+fmt(r.s)+(r.dq?' (DQ)':(isTied?' (TIE)':''))+'</span>';});
-h+='</div></div>';
+h+='</div>';
+// Top Performer Explanation
+function buildTopExplanation(teamLabel,members,topName,ranked,hasTie,topScore){
+if(!topName)return'<div style="margin-top:8px;padding:8px 12px;background:rgba(108,117,125,0.1);border-left:3px solid var(--text-muted);border-radius:4px;font-size:11px;color:var(--text-muted);"><strong>'+teamLabel+' Top Performer:</strong> Not selected.</div>';
+const topRank=ranked.find(x=>x.p===topName);
+const topIdx=ranked.indexOf(topRank);
+const othersAboveOrEqual=ranked.filter(x=>x.p!==topName&&!x.dq&&x.s>=topRank.s);
+let reason='';
+if(topRank.dq){reason='<span style="color:var(--danger);">Note: Selected top performer has a tow deduction — normally disqualified. Manually overridden.</span>';}
+else if(!hasTie){reason='<strong>'+topName+'</strong> earned the highest Individual KPI Bonus of <strong>'+fmt(topRank.s)+'</strong> among eligible '+teamLabel+' members, placing #'+(topIdx+1)+' with no tie.';}
+else{const tiedNames=ranked.filter(x=>!x.dq&&x.s===topScore).map(x=>x.p);reason='<strong>'+topName+'</strong> was selected from a tie at <strong>'+fmt(topScore)+'</strong> (tied with '+tiedNames.filter(n=>n!==topName).join(', ')+').<br>Tie-breaker applied: (1) Most contribution to Team KPI categories, (2) Management review.';}
+const otherScores=ranked.filter(x=>x.p!==topName).map(x=>'<span style="'+(x.dq?'text-decoration:line-through;color:var(--danger);':x.s===topRank.s?'color:#ffab40;':'')+'">'+x.p+': '+fmt(x.s)+(x.dq?' (DQ)':'')+'</span>').join(', ');
+return'<div style="margin-top:8px;padding:10px 12px;background:rgba(40,167,69,0.08);border-left:3px solid #28A745;border-radius:4px;font-size:11px;color:var(--text);line-height:1.6;"><i class="fas fa-trophy" style="color:#D4A843;margin-right:5px;"></i><strong>'+teamLabel+' Top Performer — Why '+topName+'?</strong><br>'+reason+'<br><span style="color:var(--text-muted);font-size:10px;">Other scores: '+otherScores+'</span></div>';}
+h+=buildTopExplanation('CC',CC_MEMBERS,d.topPerformer.cc,ccRanked,ccHasTie,ccTopScore);
+h+=buildTopExplanation('Admin',ADMIN_MEMBERS,d.topPerformer.admin,adRanked,adHasTie,adTopScore);
+h+='</div>';
 }
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveIndividual()"><i class="fas fa-save"></i> Save</button></div>';
 document.getElementById('content').innerHTML=h;
