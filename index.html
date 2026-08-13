@@ -163,6 +163,16 @@ const CC_TEAM_KPIS_NEW=[
 {id:'tracking_sheet',name:'Customer Tracking Sheet Update Compliance',impact:'LOW-MED',type:'per_unit',rate:3,unit:'week completed'}
 ];
 
+const CC_TEAM_KPIS_AUG2026=[
+{id:'tow',name:'Successful Tow of Illegal Parkers',impact:'HIGH',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
+{id:'parkpliant',name:'Parkpliant Successful Payments',impact:'HIGH',type:'percentage_of_total',rate:0.10,unit:'total $ received'},
+{id:'lotfull',name:'Lot Full Enforcement Effectiveness',impact:'MED-HIGH',type:'weekly_avg_ratio',tiers:[{min:100,max:100,val:30},{min:95,max:99.99,val:22.50},{min:90,max:94.99,val:15},{min:80,max:89.99,val:7.50},{min:65,max:79.99,val:4},{min:0,max:64.99,val:0}],unit:'%',ratioLabels:{numerator:'# Tow Requests',denominator:'# Lot Full Reported'}},
+{id:'towincident',name:'Towing Incident Investigation',impact:'MED-HIGH',type:'tiered_per_unit',tiers:[{min:16,max:9999,rate:10},{min:0,max:15,rate:8}],unit:'completed investigation'},
+{id:'frt',name:'First Response Time (FRT)',impact:'MEDIUM',type:'tier_time',tiers:[{label:'<1 min',val:20},{label:'1-2 min',val:10},{label:'2-3 min',val:7},{label:'3-4 min',val:5},{label:'>4 min',val:0}],unit:'avg minutes'},
+{id:'listing_issue',name:'Customer Reported Listing Issue Resolution',impact:'MEDIUM',type:'tiered_per_unit',tiers:[{min:25,max:9999,rate:3},{min:15,max:24,rate:1.50},{min:0,max:14,rate:0.75}],unit:'resolved issue'},
+{id:'tracking_sheet',name:'Customer Tracking Sheet Update Compliance',impact:'LOW-MED',type:'per_unit',rate:3,unit:'week completed'}
+];
+
 const CC_TEAM_KPIS_OLD=[
 {id:'tow',name:'Illegal Parker Towing Coordination',type:'per_unit',rate:10,unit:'successful tow',deduction:true},
 {id:'listing_issue',name:'Listing Issue Resolution',type:'per_unit',rate:3,unit:'resolved issue'},
@@ -185,6 +195,7 @@ const CC_TEAM_KPIS_MAY=[
 function getCCTeamKPIs(month){
 if(month==='2026-04') return CC_TEAM_KPIS_OLD;
 if(month==='2026-05') return CC_TEAM_KPIS_MAY;
+if(month>='2026-08') return CC_TEAM_KPIS_AUG2026;
 return CC_TEAM_KPIS_NEW;
 }
 
@@ -198,6 +209,18 @@ const ADMIN_TEAM_KPIS_NEW=[
 {id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
 {id:'parkpliant_admin',name:'Parkpliant Payments',type:'per_unit',rate:10,unit:'payment'},
 {id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'On time',val:60},{label:'Late',val:0}]}
+];
+
+const ADMIN_TEAM_KPIS_AUG2026=[
+{id:'endorsements',name:'Department Endorsements',type:'endorsement_detail',tiers:[{min:98,max:100,val:30},{min:95,max:97.99,val:20},{min:90,max:94.99,val:15},{min:80,max:89.99,val:10},{min:75,max:79.99,val:5},{min:0,max:74.99,val:0}]},
+{id:'daily_task',name:'Daily Task Monitoring',type:'weekly_avg_tier',tiers:[{min:95,max:100,val:10},{min:0,max:94.99,val:0}],unit:'%'},
+{id:'inventory',name:'Platform Inventory Management',type:'select',options:[{label:'Zero errors',val:30},{label:'Less than 9 errors',val:15},{label:'9 or more errors',val:7.50}]},
+{id:'new_listing',name:'New Listing & Revision Management',type:'listing_revision',bonus:30,threshold:95},
+{id:'facility_audit',name:'Facility Listings Auditing',type:'tier',tiers:[{min:95,max:100,val:30},{min:0,max:94.99,val:15}],unit:'%'},
+{id:'facility_action',name:'Facility Listings Auditing Action',type:'tiered_per_unit',tiers:[{min:40,max:9999,rate:3},{min:30,max:39,rate:1.50},{min:0,max:29,rate:0}],unit:'issue resolved'},
+{id:'tow_assign',name:'Towing Company Assignment',type:'multi_rate',rates:[{id:'onboarded',label:'Fully onboarded',rate:5},{id:'new_company',label:'New company onboarded',rate:20}]},
+{id:'parkpliant_admin',name:'Parkpliant Payments',type:'percentage_of_total',rate:0.10,unit:'total $ received'},
+{id:'split_revenue',name:'Processing Split Revenue',type:'select',options:[{label:'By 2nd day',val:60},{label:'By 3rd day',val:40},{label:'Not achieved',val:0}]}
 ];
 
 const ADMIN_TEAM_KPIS_OLD=[
@@ -225,6 +248,7 @@ const ADMIN_TEAM_KPIS_MAY=[
 function getAdminTeamKPIs(month){
 if(month==='2026-04') return ADMIN_TEAM_KPIS_OLD;
 if(month==='2026-05') return ADMIN_TEAM_KPIS_MAY;
+if(month>='2026-08') return ADMIN_TEAM_KPIS_AUG2026;
 return ADMIN_TEAM_KPIS_NEW;
 }
 
@@ -442,7 +466,9 @@ async function loadDataFromServer(){const localData=JSON.parse(JSON.stringify(da
 let _saveTimer=null;
 function saveData(){localStorage.setItem('ysrkpi_data',JSON.stringify(data));if(_saveTimer)clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>{fetch('/api/data',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>{if(!r.ok)console.warn('Server save failed:',r.status);}).catch(e=>console.warn('Server save error:',e));},1000);}
 function getMonthData(m){
-if(!data[m])data[m]={cc_team:{},admin_team:{},individual:{},deductions:[],coaching:{},topPerformer:{cc:'',admin:''},lowPerformer:{cc:'',admin:''},ccTeamGrossOverride:null,ccTeamNetOverride:null,ccMemberCount:null,adminTeamTotalOverride:null,adminMemberCount:null,weeklyCC:{},weeklyAdmin:{},weeklyInd:{},weeklyOverrides:{},employeeRates:{}};
+if(!data[m])data[m]={cc_team:{},admin_team:{},individual:{},deductions:[],coaching:{},topPerformer:{cc:'',admin:''},lowPerformer:{cc:'',admin:''},ccTeamGrossOverride:null,ccTeamNetOverride:null,ccMemberCount:null,adminTeamTotalOverride:null,adminMemberCount:null,weeklyCC:{},weeklyAdmin:{},weeklyInd:{},weeklyOverrides:{},employeeRates:{},ccTeamDeductions:[],adminTeamDeductions:[]};
+if(!data[m].ccTeamDeductions)data[m].ccTeamDeductions=[];
+if(!data[m].adminTeamDeductions)data[m].adminTeamDeductions=[];
 if(!data[m].employeeRates)data[m].employeeRates={};
 if(!data[m].weeklyCC)data[m].weeklyCC={};
 if(!data[m].weeklyAdmin)data[m].weeklyAdmin={};
@@ -487,6 +513,8 @@ if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCou
 val=parseFloat(val);
 if(isNaN(val))return 0;
 if(kpi.type==='per_unit')return val*kpi.rate;
+if(kpi.type==='percentage_of_total')return val*kpi.rate;
+if(kpi.type==='tiered_per_unit'){if(val<=0)return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return val*t.rate;}return 0;}
 if(kpi.type==='tier'){for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
 if(kpi.type==='tier_time')return val;
 return 0;
@@ -545,6 +573,8 @@ if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCoun
 if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
+if(kpi.type==='percentage_of_total'){val=parseFloat(val);return isNaN(val)?0:val*kpi.rate;}
+if(kpi.type==='tiered_per_unit'){val=parseFloat(val);if(isNaN(val)||val<=0)return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return val*t.rate;}return 0;}
 if(kpi.type==='tier'){val=parseFloat(val);if(isNaN(val))return 0;for(const t of kpi.tiers){if(val>=t.min&&val<=t.max)return t.val;}return 0;}
 if(kpi.type==='select')return parseFloat(val)||0;
 if(kpi.type==='multi_rate'){if(!val)return 0;if(typeof val!=='object')return parseFloat(val)||0;let t=0;kpi.rates.forEach(r=>{t+=(parseFloat(val[r.id])||0)*r.rate;});return t;}
@@ -559,18 +589,33 @@ getCCTeamKPIs(m).forEach(k=>{total+=calcCCTeamKPI(k,d.cc_team[k.id]);});
 return total;
 }
 
+function getCCTeamDeductionsTotal(m){
+const d=getMonthData(m);
+if(!d.ccTeamDeductions||!d.ccTeamDeductions.length)return 0;
+return d.ccTeamDeductions.reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
+}
 function getCCTeamNet(m){
 const d=getMonthData(m);
 if(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined&&d.ccTeamNetOverride!=='')return parseFloat(d.ccTeamNetOverride);
-return getCCTeamTotal(m);
+return getCCTeamTotal(m)-getCCTeamDeductionsTotal(m);
 }
 
+function getAdminTeamDeductionsTotal(m){
+const d=getMonthData(m);
+if(!d.adminTeamDeductions||!d.adminTeamDeductions.length)return 0;
+return d.adminTeamDeductions.reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
+}
 function getAdminTeamTotal(m){
 const d=getMonthData(m);
 if(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined&&d.adminTeamTotalOverride!=='')return parseFloat(d.adminTeamTotalOverride);
 let total=0;
 getAdminTeamKPIs(m).forEach(k=>{total+=calcAdminTeamKPI(k,d.admin_team[k.id]);});
 return total;
+}
+function getAdminTeamNet(m){
+const d=getMonthData(m);
+if(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined&&d.adminTeamTotalOverride!=='')return parseFloat(d.adminTeamTotalOverride);
+return getAdminTeamTotal(m)-getAdminTeamDeductionsTotal(m);
 }
 
 function getIndividualTotal(m,person){
@@ -663,7 +708,7 @@ const indTotal=getIndividualTotal(m,person);
 const team=getTeamForPerson(person);
 const ccNet=getCCTeamNet(m);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
-const adminTotal_=getAdminTeamTotal(m);
+const adminTotal_=getAdminTeamNet(m);
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 let teamShare=0;
 if(team==='dual'){teamShare=(ccNet/ccCount)+(adminTotal_/adminCount);}
@@ -686,7 +731,7 @@ const indTotal=getIndividualTotal(m,person);
 const team=getTeamForPerson(person);
 const ccNet=getCCTeamNet(m);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
-const adminTotal_=getAdminTeamTotal(m);
+const adminTotal_=getAdminTeamNet(m);
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 let teamShare=0;
 if(team==='dual'){teamShare=(ccNet/ccCount)+(adminTotal_/adminCount);}
@@ -841,7 +886,7 @@ function changeMonth(m){currentMonth=m;navigate(currentPage);}
 function renderDashboard(){
 const d=getMonthData(currentMonth);
 const ccPool=getCCTeamNet(currentMonth);
-const adminPool=getAdminTeamTotal(currentMonth);
+const adminPool=getAdminTeamNet(currentMonth);
 let totalPayout=0;
 ALL_MEMBERS.forEach(p=>{totalPayout+=getFinalBonus(currentMonth,p);});
 const bonuses=ALL_MEMBERS.filter(p=>!DUAL_TEAM_MEMBERS.includes(p)).map(p=>({name:p,bonus:getFinalBonus(currentMonth,p)})).sort((a,b)=>b.bonus-a.bonus);
@@ -861,7 +906,7 @@ document.getElementById('content').innerHTML=h;
 const ctx1=document.getElementById('bonusChart').getContext('2d');
 charts.bonus=new Chart(ctx1,{type:'bar',data:{labels:bonuses.map(b=>b.name),datasets:[{label:'Bonus ($)',data:bonuses.map(b=>b.bonus),backgroundColor:'#D4A843',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#9aa5b4',callback:v=>'$'+v}},x:{ticks:{color:'#9aa5b4'}}}}});
 const mLabels=[],ccData=[],adminData=[];
-MONTHS.forEach(m=>{mLabels.push(m.label.split(' ')[0]);ccData.push(getCCTeamNet(m.key));adminData.push(getAdminTeamTotal(m.key));});
+MONTHS.forEach(m=>{mLabels.push(m.label.split(' ')[0]);ccData.push(getCCTeamNet(m.key));adminData.push(getAdminTeamNet(m.key));});
 const ctx2=document.getElementById('trendChart').getContext('2d');
 charts.trend=new Chart(ctx2,{type:'line',data:{labels:mLabels,datasets:[{label:'CC Team Net',data:ccData,borderColor:'#D4A843',backgroundColor:'#D4A84333',fill:true,tension:0.3},{label:'Admin Team',data:adminData,borderColor:'#2196f3',backgroundColor:'#2196f333',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:'#9aa5b4',callback:v=>'$'+v}},x:{ticks:{color:'#9aa5b4'}}},plugins:{legend:{labels:{color:'#e8e8e8'}}}}});
 }
@@ -917,6 +962,8 @@ h+='</div>';
 h+='<select onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);">';
 kpi.tiers.forEach(t=>{h+='<option value="'+t.val+'"'+(parseFloat(val)===t.val?' selected':'')+'>'+t.label+' ($'+t.val+')</option>';});
 h+='</select>';
+}else if(kpi.type==='percentage_of_total'){
+h+='<div style="display:flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-weight:600;">$</span><input type="number" min="0" step="0.01" value="'+val+'" placeholder="Total $ received" style="width:120px;" onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);"><span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">×'+(kpi.rate*100)+'%</span></div>';
 }else{
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateCCTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'cc\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
@@ -944,17 +991,39 @@ h+='<div class="override-group"><label>Gross Override ($):</label><input type="n
 h+='<div class="override-group"><label>Net Override ($):</label><input type="number" value="'+(d.ccTeamNetOverride!==null&&d.ccTeamNetOverride!==undefined?d.ccTeamNetOverride:'')+'" onchange="updateCCOverride(\'ccTeamNetOverride\',this.value)"></div>';
 h+='<div class="override-group"><label>Member Count:</label><input type="number" value="'+(d.ccMemberCount!==null&&d.ccMemberCount!==undefined?d.ccMemberCount:'')+'" onchange="updateCCOverride(\'ccMemberCount\',this.value)"></div>';
 h+='</div>';
+h+='<div class="form-section"><h3><i class="fas fa-minus-circle"></i> Manual Deductions</h3>';
+h+='<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:15px;flex-wrap:wrap;">';
+h+='<div style="flex:0 0 140px"><label style="display:block;margin-bottom:4px;font-size:13px;">Amount ($)</label><input type="number" id="ccDeductAmt" placeholder="0.00" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<div style="flex:1;min-width:200px"><label style="display:block;margin-bottom:4px;font-size:13px;">Reason</label><input type="text" id="ccDeductReason" placeholder="Enter reason for deduction" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<button class="btn" onclick="addCCTeamDeduction()" style="padding:8px 16px;background:#c0392b;border:none;color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap;"><i class="fas fa-plus"></i> Add Deduction</button>';
+h+='</div>';
+const ccDeds=d.ccTeamDeductions||[];
+if(ccDeds.length){
+h+='<table style="width:100%;border-collapse:collapse;margin-bottom:10px;">';
+h+='<tr style="background:#1a2d50;"><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Amount</th><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Reason</th><th style="padding:8px;text-align:center;border-bottom:1px solid #2a3f6a;width:60px;">Remove</th></tr>';
+ccDeds.forEach((ded,i)=>{
+h+='<tr style="border-bottom:1px solid #1a2d50;"><td style="padding:8px;color:#e74c3c;font-weight:600;">-'+fmt(ded.amount)+'</td><td style="padding:8px;">'+ded.reason+'</td><td style="padding:8px;text-align:center;"><button onclick="removeCCTeamDeduction('+i+')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;" title="Remove"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</table>';
+}
+h+='</div>';
 const gross=getCCTeamTotal(currentMonth);
+const gross=getCCTeamTotal(currentMonth);
+const ccDedsTotal=getCCTeamDeductionsTotal(currentMonth);
 const net=getCCTeamNet(currentMonth);
 const count=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 h+='<div class="summary-box"><h4>CC Team Bonus Summary</h4>';
-h+='<div class="row"><span>Total</span><span class="val">'+fmt(gross)+'</span></div>';
-h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(gross/count)+'</span></div>';
+h+='<div class="row"><span>Gross Total</span><span class="val">'+fmt(gross)+'</span></div>';
+if(ccDedsTotal>0){h+='<div class="row"><span>Deductions</span><span class="val" style="color:#e74c3c;">-'+fmt(ccDedsTotal)+'</span></div>';
+h+='<div class="row" style="border-top:1px solid #2a3f6a;padding-top:8px;"><span><strong>Net Total</strong></span><span class="val"><strong>'+fmt(net)+'</strong></span></div>';}
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(net/count)+'</span></div>';
 h+='</div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveCCTeam()"><i class="fas fa-save"></i> Save</button></div>';
 document.getElementById('content').innerHTML=h;
 }
 
+function addCCTeamDeduction(){const amt=document.getElementById('ccDeductAmt').value;const reason=document.getElementById('ccDeductReason').value.trim();if(!amt||parseFloat(amt)<=0){toast('Enter a valid deduction amount');return;}if(!reason){toast('Enter a reason for the deduction');return;}const d=getMonthData(currentMonth);if(!d.ccTeamDeductions)d.ccTeamDeductions=[];d.ccTeamDeductions.push({amount:parseFloat(amt),reason:reason});saveData();renderCCTeam();toast('CC Team deduction added');}
+function removeCCTeamDeduction(idx){const d=getMonthData(currentMonth);d.ccTeamDeductions.splice(idx,1);saveData();renderCCTeam();toast('CC Team deduction removed');}
 function updateCCTeam(id,val){const d=getMonthData(currentMonth);d.cc_team[id]=val;}
 function updateWeeklyRatioCC(kpiId,weekId,field,val){const d=getMonthData(currentMonth);if(!d.cc_team[kpiId]||typeof d.cc_team[kpiId]!=='object')d.cc_team[kpiId]={};if(!d.cc_team[kpiId][weekId]||typeof d.cc_team[kpiId][weekId]!=='object')d.cc_team[kpiId][weekId]={};d.cc_team[kpiId][weekId][field]=val===''?'':parseFloat(val);saveData();renderCCTeam();}
 function updateCCOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
@@ -1154,6 +1223,8 @@ h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOve
 h+='<option value="">-- Select --</option>';
 kpi.options.forEach(o=>{h+='<option value="'+o.val+'"'+(parseFloat(val)===o.val?' selected':'')+'>'+o.label+' ($'+o.val+')</option>';});
 h+='</select>';
+}else if(kpi.type==='percentage_of_total'){
+h+='<div style="display:flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-weight:600;">$</span><input type="number" min="0" step="0.01" value="'+val+'" placeholder="Total $ received" style="width:120px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"><span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">×'+(kpi.rate*100)+'%</span></div>';
 }else{
 h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
 }
@@ -1180,16 +1251,38 @@ h+='<div class="form-section"><h3><i class="fas fa-sliders-h"></i> Overrides</h3
 h+='<div class="override-group"><label>Total Override ($):</label><input type="number" value="'+(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined?d.adminTeamTotalOverride:'')+'" onchange="updateAdminOverride(\'adminTeamTotalOverride\',this.value)"></div>';
 h+='<div class="override-group"><label>Member Count:</label><input type="number" value="'+(d.adminMemberCount!==null&&d.adminMemberCount!==undefined?d.adminMemberCount:'')+'" onchange="updateAdminOverride(\'adminMemberCount\',this.value)"></div>';
 h+='</div>';
-const total=getAdminTeamTotal(currentMonth);
+h+='<div class="form-section"><h3><i class="fas fa-minus-circle"></i> Manual Deductions</h3>';
+h+='<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:15px;flex-wrap:wrap;">';
+h+='<div style="flex:0 0 140px"><label style="display:block;margin-bottom:4px;font-size:13px;">Amount ($)</label><input type="number" id="adminDeductAmt" placeholder="0.00" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<div style="flex:1;min-width:200px"><label style="display:block;margin-bottom:4px;font-size:13px;">Reason</label><input type="text" id="adminDeductReason" placeholder="Enter reason for deduction" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<button class="btn" onclick="addAdminTeamDeduction()" style="padding:8px 16px;background:#c0392b;border:none;color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap;"><i class="fas fa-plus"></i> Add Deduction</button>';
+h+='</div>';
+const adminDeds=d.adminTeamDeductions||[];
+if(adminDeds.length){
+h+='<table style="width:100%;border-collapse:collapse;margin-bottom:10px;">';
+h+='<tr style="background:#1a2d50;"><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Amount</th><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Reason</th><th style="padding:8px;text-align:center;border-bottom:1px solid #2a3f6a;width:60px;">Remove</th></tr>';
+adminDeds.forEach((ded,i)=>{
+h+='<tr style="border-bottom:1px solid #1a2d50;"><td style="padding:8px;color:#e74c3c;font-weight:600;">-'+fmt(ded.amount)+'</td><td style="padding:8px;">'+ded.reason+'</td><td style="padding:8px;text-align:center;"><button onclick="removeAdminTeamDeduction('+i+')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;" title="Remove"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</table>';
+}
+h+='</div>';
+const grossAdmin=getAdminTeamTotal(currentMonth);
+const adminDedsTotal=getAdminTeamDeductionsTotal(currentMonth);
+const netAdmin=getAdminTeamNet(currentMonth);
 const count=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 h+='<div class="summary-box"><h4>Admin Team Bonus Summary</h4>';
-h+='<div class="row"><span>Total</span><span class="val">'+fmt(total)+'</span></div>';
-h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(total/count)+'</span></div>';
+h+='<div class="row"><span>Gross Total</span><span class="val">'+fmt(grossAdmin)+'</span></div>';
+if(adminDedsTotal>0){h+='<div class="row"><span>Deductions</span><span class="val" style="color:#e74c3c;">-'+fmt(adminDedsTotal)+'</span></div>';
+h+='<div class="row" style="border-top:1px solid #2a3f6a;padding-top:8px;"><span><strong>Net Total</strong></span><span class="val"><strong>'+fmt(netAdmin)+'</strong></span></div>';}
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(netAdmin/count)+'</span></div>';
 h+='</div>';
 h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveAdminTeam()"><i class="fas fa-save"></i> Save</button></div>';
 document.getElementById('content').innerHTML=h;
 }
 
+function addAdminTeamDeduction(){const amt=document.getElementById('adminDeductAmt').value;const reason=document.getElementById('adminDeductReason').value.trim();if(!amt||parseFloat(amt)<=0){toast('Enter a valid deduction amount');return;}if(!reason){toast('Enter a reason for the deduction');return;}const d=getMonthData(currentMonth);if(!d.adminTeamDeductions)d.adminTeamDeductions=[];d.adminTeamDeductions.push({amount:parseFloat(amt),reason:reason});saveData();renderAdminTeam();toast('Admin Team deduction added');}
+function removeAdminTeamDeduction(idx){const d=getMonthData(currentMonth);d.adminTeamDeductions.splice(idx,1);saveData();renderAdminTeam();toast('Admin Team deduction removed');}
 function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team[id]=val;}
 function updateAdminMultiRate(kpiId,rateId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][rateId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
 function updateEndorsementDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.endorsements||typeof d.admin_team.endorsements!=='object')d.admin_team.endorsements={};if(!d.admin_team.endorsements[weekId])d.admin_team.endorsements[weekId]={};d.admin_team.endorsements[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
@@ -1258,7 +1351,7 @@ const personDeds=(d.deductions||[]).filter(ded=>ded.person===currentIndPerson);
 const useProgressive=currentMonth>='2026-06';
 const indTeam=getTeamForPerson(currentIndPerson);
 let indPageTeamShare=0;
-{const ccN=getCCTeamNet(currentMonth);const ccC=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const adT=getAdminTeamTotal(currentMonth);const adC=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+{const ccN=getCCTeamNet(currentMonth);const ccC=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const adT=getAdminTeamNet(currentMonth);const adC=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 if(indTeam==='dual'){indPageTeamShare=(ccN/ccC)+(adT/adC);}else if(indTeam==='cc'){indPageTeamShare=ccN/ccC;}else{indPageTeamShare=adT/adC;}}
 const indPageLowDed=getLowPerfDeduction(currentMonth,currentIndPerson);
 const indPageAdjTeam=indPageTeamShare*(1-indPageLowDed);
@@ -1406,6 +1499,8 @@ if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCoun
 if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
 if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
 if(kpi.type==='per_unit')return (parseFloat(val)||0)*kpi.rate;
+if(kpi.type==='percentage_of_total')return (parseFloat(val)||0)*kpi.rate;
+if(kpi.type==='tiered_per_unit'){const n=parseFloat(val)||0;if(n<=0)return 0;for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return n*t.rate;}return 0;}
 if(kpi.type==='multi_rate'){if(!val||typeof val!=='object')return parseFloat(val)||0;let t=0;kpi.rates.forEach(r=>{t+=(parseFloat(val[r.id])||0)*r.rate;});return t;}
 if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
 if(kpi.type==='tier_time'){return parseFloat(val)||0;}
@@ -1423,6 +1518,8 @@ if(kpi.type==='multi_rate'){if(typeof val==='object'&&val){let parts=[];Object.e
 const n=parseFloat(val);
 if(isNaN(n))return String(val);
 if(kpi.type==='per_unit')return n+' '+(kpi.unit||(n===1?'unit':'units'));
+if(kpi.type==='percentage_of_total')return '$'+n.toFixed(2)+' total × '+(kpi.rate*100)+'%';
+if(kpi.type==='tiered_per_unit'){let rateUsed='';for(const t of kpi.tiers){if(n>=t.min&&n<=t.max){rateUsed=' @ $'+t.rate.toFixed(2)+'/ea';break;}}return n+' '+(kpi.unit||'units')+rateUsed;}
 if(kpi.type==='tier')return n+(kpi.unit||'');
 if(kpi.type==='tier_time')return n+' '+(kpi.unit||'avg minutes');
 if(kpi.type==='select')return n>0?fmt(n):'$0.00';
@@ -1431,7 +1528,7 @@ return String(n);
 function renderSummary(){
 const d=getMonthData(currentMonth);
 const ccNet=getCCTeamNet(currentMonth);
-const adminTotal=getAdminTeamTotal(currentMonth);
+const adminTotal=getAdminTeamNet(currentMonth);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
@@ -1582,7 +1679,7 @@ const d=getMonthData(currentMonth);
 const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
 let txt='YourSpot Rented - KPI Bonus Summary\n'+mLabel+'\n'+'='.repeat(50)+'\n\n';
 txt+='CC Team Pool: '+fmt(getCCTeamNet(currentMonth))+'\n';
-txt+='Admin Team Pool: '+fmt(getAdminTeamTotal(currentMonth))+'\n\n';
+txt+='Admin Team Pool: '+fmt(getAdminTeamNet(currentMonth))+'\n\n';
 txt+='Employee Bonuses:\n'+'-'.repeat(50)+'\n';
 ALL_MEMBERS.forEach(p=>{
 const final_=getFinalBonus(currentMonth,p);
@@ -1602,7 +1699,7 @@ toast('Exported successfully');
 function renderWeekly(){
 const d=getMonthData(currentMonth);
 const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
-const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamTotal(currentMonth);
+const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamNet(currentMonth);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const weeks=getWeekRanges(currentMonth);
@@ -1735,7 +1832,7 @@ document.getElementById('content').innerHTML=h;
 function updateWeeklyNote(week,val){const d=getMonthData(currentMonth);if(!d.weeklyNotes)d.weeklyNotes={};d.weeklyNotes[week]=val;}
 function exportWeekly(){
 const d=getMonthData(currentMonth);const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
-const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamTotal(currentMonth);
+const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamNet(currentMonth);
 const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
 const expWeeks=getWeekRanges(currentMonth);
@@ -2361,9 +2458,9 @@ const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
 const overallPct=maxTotal>0?Math.round(indivTotal/maxTotal*100):0;
 const finalBonus=getFinalBonus(currentMonth,coachingPerson);
 let teamShare=0;
-if(team==='dual'){const net=getCCTeamNet(currentMonth);const ccCnt=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const tot=getAdminTeamTotal(currentMonth);const adCnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=(net/ccCnt)+(tot/adCnt);}
+if(team==='dual'){const net=getCCTeamNet(currentMonth);const ccCnt=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const tot=getAdminTeamNet(currentMonth);const adCnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=(net/ccCnt)+(tot/adCnt);}
 else if(team==='cc'){const net=getCCTeamNet(currentMonth);const cnt=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=net/cnt;}
-else{const tot=getAdminTeamTotal(currentMonth);const cnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=tot/cnt;}
+else{const tot=getAdminTeamNet(currentMonth);const cnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=tot/cnt;}
 const isTop=((team==='dual'&&(d.topPerformer.cc===coachingPerson||d.topPerformer.admin===coachingPerson))||(team==='cc'&&d.topPerformer.cc===coachingPerson)||(team==='admin'&&d.topPerformer.admin===coachingPerson))&&currentMonth>='2026-06';
 const isLow=(team==='dual'&&(d.lowPerformer.cc===coachingPerson||d.lowPerformer.admin===coachingPerson))||(team==='cc'&&d.lowPerformer.cc===coachingPerson)||(team==='admin'&&d.lowPerformer.admin===coachingPerson);
 const lowDed=getLowPerfDeduction(currentMonth,coachingPerson);
