@@ -742,13 +742,13 @@ const lowDed=getLowPerfDeduction(m,person);
 const adjTeamShare=teamShare*(1-lowDed);
 const isTop=(team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person);
 const topBonus=(isTop&&m>='2026-06')?25:0;
-const totalPreDed=indTotal+adjTeamShare+topBonus;
-const useP=m>='2026-06';
 const cap=m>='2026-07'?getMaxBonusCap(m,person):0;
 const basePreCap=indTotal+adjTeamShare;
 const wasCapped=m>='2026-07'&&cap>0&&basePreCap>cap;
 const cappedBase=wasCapped?cap:basePreCap;
-const dedBase=m>='2026-07'&&cap>0?cap:totalPreDed;
+const dedBase=m>='2026-07'&&cap>0?cap:(indTotal+adjTeamShare+topBonus);
+const totalPreDed=indTotal+adjTeamShare+topBonus;
+const useP=m>='2026-06';
 const progDed=calcProgressiveDeduction(dedBase,personDeds.length);
 const towDedAmt=useP?progDed.total:(indTotal*(Math.min(personDeds.length*25,100)/100));
 let uncapped;
@@ -1129,4 +1129,1867 @@ h+='<div style="width:100%;margin-top:8px;padding:12px;background:rgba(212,168,6
 h+='<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Ratio Breakdown</div>';
 h+='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
 h+='<tr style="border-bottom:1px solid var(--border);">';
-h+='<th style="text-align:left;padding:6px 8px;color:var(--gold);font-size
+h+='<th style="text-align:left;padding:6px 8px;color:var(--gold);font-size:11px;">Week</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+numLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">'+denLabel+'</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">%</th>';
+h+='</tr>';
+weeks.forEach(w=>{
+const wd=wrVal[w.id]||{};
+const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;
+const pct=den>0?(num/den*100).toFixed(2)+'%':'-';
+const pctC=den>0?(num/den*100>=95?'#4CAF50':num/den*100>=85?'#FF9800':'#f44336'):'var(--text-muted)';
+h+='<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
+h+='<td style="padding:6px 8px;color:var(--text-muted);font-size:11px;">'+w.label+'</td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.numerator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioDetail(\''+kpi.id+'\',\''+w.id+'\',\'numerator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.denominator||'')+'" placeholder="0" style="width:60px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateWeeklyRatioDetail(\''+kpi.id+'\',\''+w.id+'\',\'denominator\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;color:'+pctC+';font-weight:600;">'+pct+'</td>';
+h+='</tr>';
+});
+h+='</table>';
+if(sc.weekCount>0){
+const avgC=sc.avg>=95?'#4CAF50':sc.avg>=85?'#FF9800':'#f44336';
+h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
+h+='<div style="font-weight:600;">Monthly Average ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+'): <span style="color:'+avgC+';font-size:14px;">'+sc.avg.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
+h+='</div>';}
+h+='</div>';
+}else if(isEndorsement){
+const eVal=typeof val==='object'&&val?val:{};
+const sc=calcEndorsementScore(eVal);
+h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+h+='<div style="width:100%;margin-top:8px;padding:12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Endorsement Breakdown</div>';
+h+='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+h+='<tr style="border-bottom:1px solid var(--border);">';
+h+='<th style="text-align:left;padding:6px 8px;color:var(--gold);font-size:11px;">Week</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Total</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Ack ≤1hr</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Ack %</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Completed</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Comp %</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Missed</th>';
+h+='<th style="text-align:center;padding:6px 4px;color:var(--gold);font-size:11px;">Miss %</th>';
+h+='</tr>';
+weeks.forEach(w=>{
+const wd=eVal[w.id]||{};
+const wTotal=parseFloat(wd.total)||0;
+const wAck=parseFloat(wd.acknowledged)||0;
+const wComp=parseFloat(wd.completed)||0;
+const wMissed=wTotal>0?wTotal-wComp:0;
+const wAckPct=wTotal>0?(wAck/wTotal*100).toFixed(2)+'%':'-';
+const wCompPct=wTotal>0?(wComp/wTotal*100).toFixed(2)+'%':'-';
+const wMissPct=wTotal>0?(wMissed/wTotal*100).toFixed(2)+'%':'-';
+const ackColor=wTotal>0?(wAck/wTotal*100>=95?'#4CAF50':wAck/wTotal*100>=90?'#FF9800':'#f44336'):'var(--text-muted)';
+const compColor=wTotal>0?(wComp/wTotal*100>=95?'#4CAF50':wComp/wTotal*100>=90?'#FF9800':'#f44336'):'var(--text-muted)';
+const missColor=wTotal>0?(wMissed/wTotal*100<=5?'#4CAF50':wMissed/wTotal*100<=10?'#FF9800':'#f44336'):'var(--text-muted)';
+h+='<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
+h+='<td style="padding:6px 8px;color:var(--text-muted);font-size:11px;">'+w.label+'</td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.total||'')+'" placeholder="0" style="width:55px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateEndorsementDetail(\''+w.id+'\',\'total\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.acknowledged||'')+'" placeholder="0" style="width:55px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateEndorsementDetail(\''+w.id+'\',\'acknowledged\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;color:'+ackColor+';font-weight:600;">'+wAckPct+'</td>';
+h+='<td style="text-align:center;padding:4px;"><input type="number" min="0" value="'+(wd.completed||'')+'" placeholder="0" style="width:55px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateEndorsementDetail(\''+w.id+'\',\'completed\',this.value)"></td>';
+h+='<td style="text-align:center;padding:4px;color:'+compColor+';font-weight:600;">'+wCompPct+'</td>';
+h+='<td style="text-align:center;padding:4px;color:'+missColor+';font-weight:600;">'+wMissed+'</td>';
+h+='<td style="text-align:center;padding:4px;color:'+missColor+';font-weight:600;">'+wMissPct+'</td>';
+h+='</tr>';
+});
+h+='</table>';
+if(sc.weekCount>0){
+h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(212,168,67,0.08);border-radius:4px;font-size:12px;">';
+h+='<div style="font-weight:600;color:var(--gold);margin-bottom:4px;">Monthly Averages ('+sc.weekCount+' week'+(sc.weekCount>1?'s':'')+')</div>';
+const ackC=sc.ackPct>=95?'#4CAF50':sc.ackPct>=90?'#FF9800':'#f44336';
+const compC=sc.compPct>=95?'#4CAF50':sc.compPct>=90?'#FF9800':'#f44336';
+const missC=sc.missPct<=5?'#4CAF50':sc.missPct<=10?'#FF9800':'#f44336';
+const ovC=sc.overall>=95?'#4CAF50':sc.overall>=90?'#FF9800':'#f44336';
+h+='<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+h+='<span>Acknowledged ≤1hr: <strong style="color:'+ackC+';">'+sc.ackPct.toFixed(2)+'%</strong></span>';
+h+='<span>Completed on time: <strong style="color:'+compC+';">'+sc.compPct.toFixed(2)+'%</strong></span>';
+h+='<span>Missed/Delayed: <strong style="color:'+missC+';">'+sc.missPct.toFixed(2)+'%</strong></span>';
+h+='</div>';
+h+='<div style="margin-top:6px;font-weight:600;">Overall Score: <span style="color:'+ovC+';font-size:14px;">'+sc.overall.toFixed(2)+'%</span> → <span style="color:var(--gold);">'+fmt(calc)+'</span></div>';
+h+='</div>';}
+h+='</div>';
+}else if(isMultiRate){
+const mrVal=typeof val==='object'&&val?val:{};
+h+='<div style="display:flex;flex-direction:column;gap:6px;">';
+kpi.rates.forEach(r=>{
+const rv=mrVal[r.id]||'';
+const rTotal=(parseFloat(rv)||0)*r.rate;
+h+='<div style="display:flex;align-items:center;gap:8px;">';
+h+='<span style="font-size:13px;color:var(--text);min-width:180px;">'+r.label+' ($'+r.rate+'/ea)</span>';
+h+='<input type="number" value="'+rv+'" placeholder="0" min="0" style="width:70px;" onchange="updateAdminMultiRate(\''+kpi.id+'\',\''+r.id+'\',this.value);">';
+h+='<span style="font-size:12px;color:var(--text-muted);">= '+fmt(rTotal)+'</span>';
+h+='</div>';
+});
+h+='</div>';
+}else if(isDropdown){
+h+='<select onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);">';
+h+='<option value="">-- Select --</option>';
+kpi.options.forEach(o=>{h+='<option value="'+o.val+'"'+(parseFloat(val)===o.val?' selected':'')+'>'+o.label+' ($'+o.val+')</option>';});
+h+='</select>';
+}else if(kpi.type==='percentage_of_total'){
+h+='<div style="display:flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-weight:600;">$</span><input type="number" min="0" step="0.01" value="'+val+'" placeholder="Total $ received" style="width:120px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"><span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">×'+(kpi.rate*100)+'%</span></div>';
+}else{
+h+='<input type="number" value="'+val+'" placeholder="Monthly total" style="width:80px;" onchange="updateAdminTeam(\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',true);"'+(isOverride?' style="width:80px;border-color:var(--gold);" title="Manual override active"':'')+'>';
+}
+if(!isEndorsement&&!isWeeklyAvg&&!isListingRev) h+='<span class="kpi-value">'+fmt(calc)+'</span>';
+if(!isDropdown&&!isMultiRate&&!isEndorsement&&!isWeeklyAvg&&!isListingRev){
+h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderAdminTeam();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
+if(isOverride) h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);" onclick="toggleWeeklyOverride(\'admin\',\''+kpi.id+'\',false);const dd=getMonthData(currentMonth);dd.admin_team[\''+kpi.id+'\']=getWeeklySum(dd.weeklyAdmin,\''+kpi.id+'\',getWeekRanges(currentMonth));renderAdminTeam();" title="Reset to weekly sum">Reset</button>';
+}
+if(isExpanded&&!isDropdown&&!isMultiRate&&!isEndorsement&&!isWeeklyAvg&&!isListingRev){
+h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Breakdown <span style="color:var(--text-muted);font-weight:400;">('+kpi.unit+')</span>'+(isOverride?' <span style="color:var(--text-muted);">(manual override — weekly inputs paused)</span>':'')+'</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=(d.weeklyAdmin[kpi.id]||{})[w.id]||'';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyAdmin(\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderAdminTeam();"><span style="font-size:10px;color:var(--text-muted);">'+kpi.unit+'</span></div>';
+});
+const adWkTotal=getWeeklySum(d.weeklyAdmin,kpi.id,weeks);
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">Monthly Total: '+adWkTotal+' '+kpi.unit+(adWkTotal!==1?'s':'')+'</div></div>';
+}
+h+='</div>';
+});
+h+='</div>';
+h+='<div class="form-section"><h3><i class="fas fa-sliders-h"></i> Overrides</h3>';
+h+='<div class="override-group"><label>Total Override ($):</label><input type="number" value="'+(d.adminTeamTotalOverride!==null&&d.adminTeamTotalOverride!==undefined?d.adminTeamTotalOverride:'')+'" onchange="updateAdminOverride(\'adminTeamTotalOverride\',this.value)"></div>';
+h+='<div class="override-group"><label>Member Count:</label><input type="number" value="'+(d.adminMemberCount!==null&&d.adminMemberCount!==undefined?d.adminMemberCount:'')+'" onchange="updateAdminOverride(\'adminMemberCount\',this.value)"></div>';
+h+='</div>';
+h+='<div class="form-section"><h3><i class="fas fa-minus-circle"></i> Manual Deductions</h3>';
+h+='<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:15px;flex-wrap:wrap;">';
+h+='<div style="flex:0 0 140px"><label style="display:block;margin-bottom:4px;font-size:13px;">Amount ($)</label><input type="number" id="adminDeductAmt" placeholder="0.00" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<div style="flex:1;min-width:200px"><label style="display:block;margin-bottom:4px;font-size:13px;">Reason</label><input type="text" id="adminDeductReason" placeholder="Enter reason for deduction" style="width:100%;padding:8px;border:1px solid #2a3f6a;border-radius:6px;background:#0d1b33;color:#e0e8f5;"></div>';
+h+='<button class="btn" onclick="addAdminTeamDeduction()" style="padding:8px 16px;background:#c0392b;border:none;color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap;"><i class="fas fa-plus"></i> Add Deduction</button>';
+h+='</div>';
+const adminDeds=d.adminTeamDeductions||[];
+if(adminDeds.length){
+h+='<table style="width:100%;border-collapse:collapse;margin-bottom:10px;">';
+h+='<tr style="background:#1a2d50;"><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Amount</th><th style="padding:8px;text-align:left;border-bottom:1px solid #2a3f6a;">Reason</th><th style="padding:8px;text-align:center;border-bottom:1px solid #2a3f6a;width:60px;">Remove</th></tr>';
+adminDeds.forEach((ded,i)=>{
+h+='<tr style="border-bottom:1px solid #1a2d50;"><td style="padding:8px;color:#e74c3c;font-weight:600;">-'+fmt(ded.amount)+'</td><td style="padding:8px;">'+ded.reason+'</td><td style="padding:8px;text-align:center;"><button onclick="removeAdminTeamDeduction('+i+')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;" title="Remove"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</table>';
+}
+h+='</div>';
+const grossAdmin=getAdminTeamTotal(currentMonth);
+const adminDedsTotal=getAdminTeamDeductionsTotal(currentMonth);
+const netAdmin=getAdminTeamNet(currentMonth);
+const count=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+h+='<div class="summary-box"><h4>Admin Team Bonus Summary</h4>';
+h+='<div class="row"><span>Gross Total</span><span class="val">'+fmt(grossAdmin)+'</span></div>';
+if(adminDedsTotal>0){h+='<div class="row"><span>Deductions</span><span class="val" style="color:#e74c3c;">-'+fmt(adminDedsTotal)+'</span></div>';
+h+='<div class="row" style="border-top:1px solid #2a3f6a;padding-top:8px;"><span><strong>Net Total</strong></span><span class="val"><strong>'+fmt(netAdmin)+'</strong></span></div>';}
+h+='<div class="row"><span>Per Member ('+count+' members)</span><span class="val">'+fmt(netAdmin/count)+'</span></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveAdminTeam()"><i class="fas fa-save"></i> Save</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function addAdminTeamDeduction(){const amt=document.getElementById('adminDeductAmt').value;const reason=document.getElementById('adminDeductReason').value.trim();if(!amt||parseFloat(amt)<=0){toast('Enter a valid deduction amount');return;}if(!reason){toast('Enter a reason for the deduction');return;}const d=getMonthData(currentMonth);if(!d.adminTeamDeductions)d.adminTeamDeductions=[];d.adminTeamDeductions.push({amount:parseFloat(amt),reason:reason});saveData();renderAdminTeam();toast('Admin Team deduction added');}
+function removeAdminTeamDeduction(idx){const d=getMonthData(currentMonth);d.adminTeamDeductions.splice(idx,1);saveData();renderAdminTeam();toast('Admin Team deduction removed');}
+function updateAdminTeam(id,val){const d=getMonthData(currentMonth);d.admin_team[id]=val;}
+function updateAdminMultiRate(kpiId,rateId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][rateId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateEndorsementDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.endorsements||typeof d.admin_team.endorsements!=='object')d.admin_team.endorsements={};if(!d.admin_team.endorsements[weekId])d.admin_team.endorsements[weekId]={};d.admin_team.endorsements[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateWeeklyAvgDetail(kpiId,weekId,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};d.admin_team[kpiId][weekId]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateWeeklyRatioDetail(kpiId,weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team[kpiId]||typeof d.admin_team[kpiId]!=='object')d.admin_team[kpiId]={};if(!d.admin_team[kpiId][weekId]||typeof d.admin_team[kpiId][weekId]!=='object')d.admin_team[kpiId][weekId]={};d.admin_team[kpiId][weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateListingRevDetail(weekId,field,val){const d=getMonthData(currentMonth);if(!d.admin_team.new_listing||typeof d.admin_team.new_listing!=='object')d.admin_team.new_listing={};if(!d.admin_team.new_listing[weekId])d.admin_team.new_listing[weekId]={};d.admin_team.new_listing[weekId][field]=val===''?'':parseFloat(val);saveData();renderAdminTeam();}
+function updateAdminOverride(key,val){const d=getMonthData(currentMonth);d[key]=val===''?null:parseFloat(val);}
+function saveAdminTeam(){saveData();renderAdminTeam();toast('Admin Team KPI saved');}
+
+let currentIndPerson=null;
+function renderIndividual(){
+if(!currentIndPerson)currentIndPerson=ALL_MEMBERS[0];
+const d=getMonthData(currentMonth);
+let h='<div class="tabs">';
+ALL_MEMBERS.forEach(p=>{h+='<div class="tab'+(p===currentIndPerson?' active':'')+'" onclick="switchIndPerson(\''+p+'\')">'+p+'</div>';});
+h+='</div>';
+const kpis=getKPIsForPerson(currentIndPerson);
+const pData=d.individual[currentIndPerson]||{};
+const weeks=getWeekRanges(currentMonth);
+const titleStr=MEMBER_TITLES[currentIndPerson]?' <span style="font-size:13px;color:var(--text-muted);font-weight:400;">('+MEMBER_TITLES[currentIndPerson]+')</span>':'';
+h+='<div class="form-section"><h3><i class="fas fa-user"></i> '+currentIndPerson+titleStr+' - Individual KPIs</h3>';
+let total=0;
+if(kpis.length===0){
+h+='<div style="text-align:center;padding:30px;color:var(--text-muted);"><i class="fas fa-users" style="font-size:36px;color:var(--gold);display:block;margin-bottom:10px;"></i><p style="font-size:16px;margin:5px 0;">No individual KPIs assigned.</p><p>'+currentIndPerson+' receives <strong style="color:var(--gold);">Team Share only</strong> (CS + Admin).</p></div>';
+}
+kpis.forEach(kpi=>{
+const val=parseFloat(pData[kpi.id])||0;
+const desc=pData[kpi.id+'_desc']||'';
+total+=val;
+const displayName=getKPIDisplayName(kpi,currentMonth);
+const indKey=currentIndPerson+'_'+kpi.id;
+const isOverride=d.weeklyOverrides['ind_'+indKey];
+const wKey='ind_'+indKey;
+const isExpanded=expandedWeekly[wKey];
+h+='<div class="form-group" style="flex-wrap:wrap;">';
+h+='<label>'+displayName+(kpi.weight?' <span style="color:var(--text-muted);font-size:11px;">('+kpi.weight+'%, max $'+kpi.max+')</span>':'<span style="color:var(--text-muted);font-size:11px;">(max $'+kpi.max+')</span>')+'</label>';
+h+='<input type="number" step="0.01" max="'+kpi.max+'" value="'+(pData[kpi.id]||'')+'" onchange="updateIndKPI(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value);toggleWeeklyOverride(\'ind\',\''+indKey+'\',true);saveData();renderIndividual();" style="width:80px;'+(isOverride?'border-color:var(--warning);':'border-color:var(--success);')+'"'+(isOverride?' title="Manual override — click ↺ to use auto-calc"':' title="Auto-calculated from weekly attainment"')+'>';
+if(isOverride){h+='<button class="btn btn-sm" style="padding:2px 6px;font-size:10px;background:var(--navy-light);color:var(--warning);border:1px solid var(--warning);cursor:pointer;" onclick="toggleWeeklyOverride(\'ind\',\''+indKey+'\',false);autoCalcIndDollar(\''+currentIndPerson+'\',\''+kpi.id+'\');saveData();renderIndividual();" title="Reset to auto-calculated value">↺</button>';}
+h+='<input placeholder="Attainment note" value="'+desc.replace(/"/g,'&quot;')+'" onchange="updateIndDesc(\''+currentIndPerson+'\',\''+kpi.id+'\',this.value)" style="flex:1;min-width:150px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;">';
+const indUnit=kpi.unit||'unit';
+const indAttainType=kpi.attainType||'count';
+h+='<button class="btn btn-sm" style="padding:4px 8px;font-size:11px;background:var(--navy-light);color:var(--gold);border:1px solid var(--border);" onclick="expandedWeekly[\''+wKey+'\']=!expandedWeekly[\''+wKey+'\'];renderIndividual();"><i class="fas fa-calendar-week"></i> '+(isExpanded?'Hide':'Weekly')+'</button>';
+if(isExpanded){
+h+='<div style="width:100%;margin-top:8px;padding:8px 12px;background:rgba(212,168,67,0.05);border:1px solid var(--border);border-radius:6px;">';
+h+='<div style="font-size:11px;color:var(--gold);margin-bottom:6px;font-weight:600;"><i class="fas fa-calendar-alt"></i> Weekly Attainment <span style="color:var(--text-muted);font-weight:400;">('+indUnit+')</span></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;">';
+weeks.forEach(w=>{
+const wVal=(d.weeklyInd[indKey]||{})[w.id]||'';
+h+='<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:11px;color:var(--text-muted);min-width:100px;">'+w.label+'</span><input type="number" step="'+(indAttainType==='avg'||indAttainType==='pct'?'0.01':'1')+'" value="'+wVal+'" placeholder="0" style="width:60px;font-size:12px;padding:4px 6px;" onchange="updateWeeklyInd(\''+currentIndPerson+'\',\''+kpi.id+'\',\''+w.id+'\',this.value);saveData();renderIndividual();"><span style="font-size:10px;color:var(--text-muted);">'+indUnit+'</span></div>';
+});
+const indWkTotal=getWeeklySum(d.weeklyInd,indKey,weeks);
+const indWkCount=weeks.filter(w=>(d.weeklyInd[indKey]||{})[w.id]).length;
+let indSummary='';
+if(indAttainType==='avg'&&indWkCount>0){indSummary='Avg: '+(indWkTotal/indWkCount).toFixed(1)+' '+indUnit;}
+else if(indAttainType==='pct'){indSummary='Latest: '+(function(){let last='';weeks.forEach(w=>{const v=(d.weeklyInd[indKey]||{})[w.id];if(v)last=v;});return last||'—';})()+' '+indUnit;}
+else{indSummary='Total: '+indWkTotal+' '+indUnit+(indWkTotal!==1?'s':'');}
+const indMonthAttain=getMonthlyAttainFromWeekly(currentIndPerson,kpi.id,kpi,d,weeks);
+const indTierDollar=indMonthAttain!==null?calcIndTierDollar(currentIndPerson,kpi.id,indMonthAttain,kpi):null;
+const indDollarStr=indTierDollar!==null?' <span style="color:'+(isOverride?'var(--text-muted)':'var(--success)')+';margin-left:8px;"><i class="fas fa-arrow-right" style="font-size:9px;"></i> $'+indTierDollar.toFixed(2)+(isOverride?' (auto)':'')+'</span>':'';
+h+='</div><div style="margin-top:6px;font-size:11px;color:var(--gold);font-weight:600;">'+indSummary+indDollarStr+'</div></div>';
+}
+h+='</div>';
+});
+// Invalid Tow Deduction — Progressive from June 2026, flat 25% before
+const personDeds=(d.deductions||[]).filter(ded=>ded.person===currentIndPerson);
+const useProgressive=currentMonth>='2026-06';
+const indTeam=getTeamForPerson(currentIndPerson);
+let indPageTeamShare=0;
+{const ccN=getCCTeamNet(currentMonth);const ccC=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const adT=getAdminTeamNet(currentMonth);const adC=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+if(indTeam==='dual'){indPageTeamShare=(ccN/ccC)+(adT/adC);}else if(indTeam==='cc'){indPageTeamShare=ccN/ccC;}else{indPageTeamShare=adT/adC;}}
+const indPageLowDed=getLowPerfDeduction(currentMonth,currentIndPerson);
+const indPageAdjTeam=indPageTeamShare*(1-indPageLowDed);
+const indPageIsTop=((indTeam==='dual'&&(d.topPerformer.cc===currentIndPerson||d.topPerformer.admin===currentIndPerson))||(indTeam==='cc'&&d.topPerformer.cc===currentIndPerson)||(indTeam==='admin'&&d.topPerformer.admin===currentIndPerson))&&currentMonth>='2026-06';
+const indPageTopBonus=indPageIsTop?25:0;
+const indPageTotalPreDed=total+indPageAdjTeam+indPageTopBonus;
+const progDed=calcProgressiveDeduction(indPageTotalPreDed,personDeds.length);
+const flatDedPct=personDeds.length*25;
+const flatDedAmt=total*(Math.min(flatDedPct,100)/100);
+h+='<div style="margin-top:15px;background:rgba(231,76,60,0.08);border-left:3px solid var(--danger);padding:12px 15px;border-radius:0 6px 6px 0;">';
+if(useProgressive){
+h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(Progressive from Total Bonus: 1st=5%, 2nd-7th=10%, 8th+=15%)</span></h4>';
+}else{
+h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(each = 25% of individual total)</span></h4>';
+}
+if(personDeds.length>0){
+if(useProgressive){
+h+='<table style="margin:0 0 10px;"><thead><tr><th>Description</th><th style="width:80px;">Tier</th><th style="width:60px;"></th></tr></thead><tbody>';
+personDeds.forEach((ded,idx)=>{
+const globalIdx=(d.deductions||[]).indexOf(ded);
+let tierLabel='';
+if(idx===0)tierLabel='1st case (5%)';
+else if(idx<=6)tierLabel='2nd case (10%)';
+else tierLabel='3rd case (15%)';
+h+='<tr><td style="font-size:13px;">'+((ded.description||'').replace(/</g,'&lt;'))+'</td><td style="color:var(--danger);font-weight:600;font-size:12px;">'+tierLabel+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeIndDed('+globalIdx+')"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</tbody></table>';
+h+='<div style="margin:10px 0;padding:10px;background:rgba(0,0,0,0.15);border-radius:6px;font-size:13px;">';
+h+='<div style="font-weight:700;color:var(--gold);margin-bottom:5px;">Progressive Breakdown:</div>';
+progDed.tiers.forEach(t=>{
+h+='<div style="color:var(--text-muted);margin:2px 0;">'+t.count+' tow'+(t.count>1?'s':'')+' × '+t.rate+'% of '+fmt(t.base)+' = <span style="color:var(--danger);font-weight:600;">-'+fmt(t.ded)+'</span></div>';
+});
+h+='<div style="font-weight:700;color:var(--danger);margin-top:8px;border-top:1px solid var(--border);padding-top:5px;">Total Deduction: -'+fmt(progDed.total)+'</div>';
+h+='</div>';
+}else{
+h+='<table style="margin:0 0 10px;"><thead><tr><th>Description</th><th style="width:120px;">Deduction</th><th style="width:60px;"></th></tr></thead><tbody>';
+personDeds.forEach((ded,i)=>{
+const globalIdx=(d.deductions||[]).indexOf(ded);
+const perDed=total*0.25;
+h+='<tr><td style="font-size:13px;">'+((ded.description||'').replace(/</g,'&lt;'))+'</td><td style="color:var(--danger);font-weight:700;">25% = -'+fmt(perDed)+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeIndDed('+globalIdx+')"><i class="fas fa-trash"></i></button></td></tr>';
+});
+h+='</tbody></table>';
+h+='<div style="font-weight:700;color:var(--danger);margin-bottom:10px;">Total: -'+flatDedPct+'% = -'+fmt(flatDedAmt)+'</div>';
+}
+}
+h+='<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">';
+h+='<div style="flex:1;min-width:200px;"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Description</label><input id="indDedDesc" placeholder="e.g. Invalid tow - Customer ID 800350593, reimbursed $178.87" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<button class="btn" style="background:var(--danger);color:#fff;padding:8px 15px;" onclick="addIndDeduction()"><i class="fas fa-plus"></i> Add Deduction</button>';
+h+='</div></div>';
+const dedTotal=useProgressive?progDed.total:flatDedAmt;
+if(useProgressive){
+const finalB=getFinalBonus(currentMonth,currentIndPerson);
+h+='<div class="summary-box"><h4>Individual KPI Total: '+fmt(total)+'</h4>';
+h+='<div class="row"><span>Team Share'+(indPageLowDed>0?' (after '+(indPageLowDed*100)+'% low ded)':'')+'</span><span class="val">'+fmt(indPageAdjTeam)+'</span></div>';
+if(indPageTopBonus>0) h+='<div class="row"><span>Top Performer Bonus</span><span class="val" style="color:#4caf50;">+'+fmt(indPageTopBonus)+'</span></div>';
+h+='<div class="row" style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px;"><span style="font-weight:700;">Total Bonus (pre-deduction)</span><span class="val" style="font-weight:700;">'+fmt(indPageTotalPreDed)+'</span></div>';
+if(dedTotal>0) h+='<div class="row"><span>Invalid Tow Deduction ('+personDeds.length+' tow'+(personDeds.length>1?'s':'')+')</span><span class="val" style="color:var(--danger);">-'+fmt(dedTotal)+'</span></div>';
+h+='<div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">NET BONUS</span><span class="val" style="font-weight:700;color:var(--gold);">'+fmt(finalB)+'</span></div></div>';
+}else{
+const dedNet=total-flatDedAmt;
+if(dedTotal>0){
+h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4><div class="row"><span>Deduction ('+flatDedPct+'%)</span><span class="val" style="color:var(--danger);">-'+fmt(dedTotal)+'</span></div><div class="row" style="border-top:2px solid var(--gold);padding-top:8px;margin-top:5px;"><span style="font-weight:700;">Net Individual Bonus</span><span class="val" style="font-weight:700;">'+fmt(dedNet)+'</span></div></div>';
+}else{
+h+='<div class="summary-box"><h4>Individual Total: '+fmt(total)+'</h4></div>';
+}
+}
+h+='</div>';
+if(currentMonth>='2026-06'){
+h+='<div class="form-section"><h3><i class="fas fa-trophy"></i> Top/Low Performer Assignment</h3>';
+h+='<div style="margin-bottom:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
+h+='<button class="btn btn-gold" onclick="autoDetectTopLow(currentMonth);saveData();renderIndividual();toast(\'Auto-detected Top/Low performers\');"><i class="fas fa-magic"></i> Auto-Detect</button>';
+h+='<span style="font-size:12px;color:var(--text-muted);">Based on highest/lowest Individual KPI total. Members with tow deductions are disqualified from Top Performer.</span>';
+h+='<div style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.5;"><strong>Tie-Breaker Policy:</strong> If two or more members have the same Individual KPI Bonus score: (1) The employee who contributed the most to Team KPI categories. (2) Management review of KPI contributions and supporting performance data, if necessary.</div>';
+h+='</div>';
+const ccTied=d._ccTopTied||[];
+const adTied=d._adminTopTied||[];
+if(ccTied.length>1){h+='<div style="margin-bottom:10px;padding:10px;background:rgba(230,81,0,0.15);border:1px solid #E65100;border-radius:6px;font-size:12px;color:#ffab40;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><strong>CC Top Performer Tie Detected:</strong> '+ccTied.join(', ')+' have the same Individual KPI score ('+fmt(getIndividualTotal(currentMonth,ccTied[0]))+').<br>Please select the Top Performer using tie-breaker criteria: (1) Most contribution to Team KPI categories, (2) Management review.</div>';}
+if(adTied.length>1){h+='<div style="margin-bottom:10px;padding:10px;background:rgba(230,81,0,0.15);border:1px solid #E65100;border-radius:6px;font-size:12px;color:#ffab40;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><strong>Admin Top Performer Tie Detected:</strong> '+adTied.join(', ')+' have the same Individual KPI score ('+fmt(getIndividualTotal(currentMonth,adTied[0]))+').<br>Please select the Top Performer using tie-breaker criteria: (1) Most contribution to Team KPI categories, (2) Management review.</div>';}
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Top Performer'+(ccTied.length>1?' <span style="color:#E65100;font-size:11px;">(TIE — select manually)</span>':'')+'</label><select onchange="updatePerformer(\'topPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid '+(ccTied.length>1?'#E65100':'var(--border)')+';padding:8px;border-radius:6px;"><option value="">--</option>';
+CC_MEMBERS.forEach(p=>{const pDeds=(d.deductions||[]).filter(x=>x.person===p);const disq=pDeds.length>0;h+='<option value="'+p+'"'+(d.topPerformer.cc===p?' selected':'')+(disq?' style="color:#e74c3c;"':'')+'>'+p+(disq?' (disqualified - tow)':'')+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">CC Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'cc\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+CC_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.cc===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Top Performer'+(adTied.length>1?' <span style="color:#E65100;font-size:11px;">(TIE — select manually)</span>':'')+'</label><select onchange="updatePerformer(\'topPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid '+(adTied.length>1?'#E65100':'var(--border)')+';padding:8px;border-radius:6px;"><option value="">--</option>';
+ADMIN_MEMBERS.forEach(p=>{const pDeds=(d.deductions||[]).filter(x=>x.person===p);const disq=pDeds.length>0;h+='<option value="'+p+'"'+(d.topPerformer.admin===p?' selected':'')+(disq?' style="color:#e74c3c;"':'')+'>'+p+(disq?' (disqualified - tow)':'')+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;margin-bottom:5px;color:var(--gold);">Admin Low Performer</label><select onchange="updatePerformer(\'lowPerformer\',\'admin\',this.value)" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"><option value="">--</option>';
+ADMIN_MEMBERS.forEach(p=>{h+='<option value="'+p+'"'+(d.lowPerformer.admin===p?' selected':'')+'>'+p+'</option>';});
+h+='</select></div></div>';
+h+='<div style="margin-top:12px;padding:10px;background:rgba(212,168,67,0.08);border-radius:6px;font-size:12px;color:var(--text-muted);">';
+h+='<strong style="color:var(--gold);">Ranking:</strong><br>';
+const ccRanked=CC_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),dq:(d.deductions||[]).some(x=>x.person===p)})).sort((a,b)=>b.s-a.s);
+const ccTopScore=ccRanked.length>0?ccRanked[0].s:0;
+const ccHasTie=ccRanked.filter(x=>!x.dq&&x.s===ccTopScore).length>1;
+ccRanked.forEach((r,i)=>{const isTied=!r.dq&&ccHasTie&&r.s===ccTopScore;h+='<span style="margin-right:10px;'+(r.dq?'text-decoration:line-through;color:var(--danger);':(isTied?'color:#ffab40;font-weight:bold;':''))+'">CC '+(i+1)+'. '+r.p+' '+fmt(r.s)+(r.dq?' (DQ)':(isTied?' (TIE)':''))+'</span>';});
+h+='<br>';
+const adRanked=ADMIN_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),dq:(d.deductions||[]).some(x=>x.person===p)})).sort((a,b)=>b.s-a.s);
+const adTopScore=adRanked.length>0?adRanked[0].s:0;
+const adHasTie=adRanked.filter(x=>!x.dq&&x.s===adTopScore).length>1;
+adRanked.forEach((r,i)=>{const isTied=!r.dq&&adHasTie&&r.s===adTopScore;h+='<span style="margin-right:10px;'+(r.dq?'text-decoration:line-through;color:var(--danger);':(isTied?'color:#ffab40;font-weight:bold;':''))+'">Admin '+(i+1)+'. '+r.p+' '+fmt(r.s)+(r.dq?' (DQ)':(isTied?' (TIE)':''))+'</span>';});
+h+='</div>';
+// Top Performer Explanation
+function buildTopExplanation(teamLabel,members,topName,ranked,hasTie,topScore){
+if(!topName)return'<div style="margin-top:8px;padding:8px 12px;background:rgba(108,117,125,0.1);border-left:3px solid var(--text-muted);border-radius:4px;font-size:11px;color:var(--text-muted);"><strong>'+teamLabel+' Top Performer:</strong> Not selected.</div>';
+const topRank=ranked.find(x=>x.p===topName);
+const topIdx=ranked.indexOf(topRank);
+const othersAboveOrEqual=ranked.filter(x=>x.p!==topName&&!x.dq&&x.s>=topRank.s);
+let reason='';
+if(topRank.dq){reason='<span style="color:var(--danger);">Note: Selected top performer has a tow deduction — normally disqualified. Manually overridden.</span>';}
+else if(!hasTie){reason='<strong>'+topName+'</strong> earned the highest Individual KPI Bonus of <strong>'+fmt(topRank.s)+'</strong> among eligible '+teamLabel+' members, placing #'+(topIdx+1)+' with no tie.';}
+else{const tiedNames=ranked.filter(x=>!x.dq&&x.s===topScore).map(x=>x.p);reason='<strong>'+topName+'</strong> was selected from a tie at <strong>'+fmt(topScore)+'</strong> (tied with '+tiedNames.filter(n=>n!==topName).join(', ')+').<br>Tie-breaker applied: (1) Most contribution to Team KPI categories, (2) Management review.';}
+const otherScores=ranked.filter(x=>x.p!==topName).map(x=>'<span style="'+(x.dq?'text-decoration:line-through;color:var(--danger);':x.s===topRank.s?'color:#ffab40;':'')+'">'+x.p+': '+fmt(x.s)+(x.dq?' (DQ)':'')+'</span>').join(', ');
+return'<div style="margin-top:8px;padding:10px 12px;background:rgba(40,167,69,0.08);border-left:3px solid #28A745;border-radius:4px;font-size:11px;color:var(--text);line-height:1.6;"><i class="fas fa-trophy" style="color:#D4A843;margin-right:5px;"></i><strong>'+teamLabel+' Top Performer — Why '+topName+'?</strong><br>'+reason+'<br><span style="color:var(--text-muted);font-size:10px;">Other scores: '+otherScores+'</span></div>';}
+h+=buildTopExplanation('CC',CC_MEMBERS,d.topPerformer.cc,ccRanked,ccHasTie,ccTopScore);
+h+=buildTopExplanation('Admin',ADMIN_MEMBERS,d.topPerformer.admin,adRanked,adHasTie,adTopScore);
+h+='</div>';
+}
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveIndividual()"><i class="fas fa-save"></i> Save</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function switchIndPerson(p){currentIndPerson=p;renderIndividual();}
+function updateIndKPI(person,kpiId,val){const d=getMonthData(currentMonth);if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId]=val===''?'':parseFloat(val);}
+function updateIndDesc(person,kpiId,val){const d=getMonthData(currentMonth);if(!d.individual[person])d.individual[person]={};d.individual[person][kpiId+'_desc']=val;}
+function updatePerformer(type,team,val){const d=getMonthData(currentMonth);d[type][team]=val;}
+function addIndDeduction(){
+const desc=document.getElementById('indDedDesc').value.trim();
+if(!desc){toast('Enter a description for the deduction');return;}
+const d=getMonthData(currentMonth);
+if(!d.deductions)d.deductions=[];
+d.deductions.push({description:desc,amount:0,person:currentIndPerson});
+saveData();renderIndividual();toast('Invalid tow deduction added (progressive policy)');
+}
+function removeIndDed(i){const d=getMonthData(currentMonth);d.deductions.splice(i,1);saveData();renderIndividual();toast('Deduction removed');}
+function saveIndividual(){saveData();renderIndividual();toast('Individual KPI saved');}
+
+function getKPIEarned(kpi,d,teamKey){
+const raw=d[teamKey]||{};
+const val=raw[kpi.id];
+if(val===undefined||val===''||val===null)return 0;
+if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.overall>=t.min&&sc.overall<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return 0;for(const t of kpi.tiers){if(sc.avg>=t.min&&sc.avg<=t.max)return t.val;}return 0;}
+if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return 0;return(sc.nlPct>=kpi.threshold&&sc.revPct>=kpi.threshold)?kpi.bonus:0;}
+if(kpi.type==='per_unit')return (parseFloat(val)||0)*kpi.rate;
+if(kpi.type==='percentage_of_total')return (parseFloat(val)||0)*kpi.rate;
+if(kpi.type==='tiered_per_unit'){const n=parseFloat(val)||0;if(n<=0)return 0;for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return n*t.rate;}return 0;}
+if(kpi.type==='multi_rate'){if(!val||typeof val!=='object')return parseFloat(val)||0;let t=0;kpi.rates.forEach(r=>{t+=(parseFloat(val[r.id])||0)*r.rate;});return t;}
+if(kpi.type==='tier'){const n=parseFloat(val);for(const t of kpi.tiers){if(n>=t.min&&n<=t.max)return t.val;}return 0;}
+if(kpi.type==='tier_time'){return parseFloat(val)||0;}
+if(kpi.type==='select'){return parseFloat(val)||0;}
+return parseFloat(val)||0;
+}
+function getTeamAttainment(kpi,raw){
+const val=raw[kpi.id];
+if(val===undefined||val===''||val===null)return '';
+if(kpi.type==='endorsement_detail'){const sc=calcEndorsementScore(val);if(sc.weekCount===0)return '';return 'Ack: '+sc.ackPct.toFixed(1)+'% | Comp: '+sc.compPct.toFixed(1)+'% | Overall: '+sc.overall.toFixed(1)+'%';}
+if(kpi.type==='weekly_avg_tier'){const sc=calcWeeklyAvgScore(val);if(sc.weekCount===0)return '';return 'Avg: '+sc.avg.toFixed(1)+'%';}
+if(kpi.type==='weekly_avg_ratio'){const sc=calcWeeklyAvgRatio(val);if(sc.weekCount===0)return '';return 'Avg: '+sc.avg.toFixed(1)+'%';}
+if(kpi.type==='listing_revision'){const sc=calcListingRevisionScore(val);if(sc.weekCount===0)return '';return 'NL: '+sc.nlUpdated+'/'+sc.nlTotal+' ('+sc.nlPct.toFixed(1)+'%) | Rev: '+sc.revUpdated+'/'+sc.revTotal+' ('+sc.revPct.toFixed(1)+'%)';}
+if(kpi.type==='multi_rate'){if(typeof val==='object'&&val){let parts=[];Object.entries(val).forEach(([k,v])=>{if(v)parts.push(k+': '+v);});return parts.join(', ')||'';}return '';}
+const n=parseFloat(val);
+if(isNaN(n))return String(val);
+if(kpi.type==='per_unit')return n+' '+(kpi.unit||(n===1?'unit':'units'));
+if(kpi.type==='percentage_of_total')return '$'+n.toFixed(2)+' total × '+(kpi.rate*100)+'%';
+if(kpi.type==='tiered_per_unit'){let rateUsed='';for(const t of kpi.tiers){if(n>=t.min&&n<=t.max){rateUsed=' @ $'+t.rate.toFixed(2)+'/ea';break;}}return n+' '+(kpi.unit||'units')+rateUsed;}
+if(kpi.type==='tier')return n+(kpi.unit||'');
+if(kpi.type==='tier_time')return n+' '+(kpi.unit||'avg minutes');
+if(kpi.type==='select')return n>0?fmt(n):'$0.00';
+return String(n);
+}
+function renderSummary(){
+const d=getMonthData(currentMonth);
+const ccNet=getCCTeamNet(currentMonth);
+const adminTotal=getAdminTeamNet(currentMonth);
+const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
+let h='<div class="form-section"><h3><i class="fas fa-file-invoice-dollar"></i> Complete Bonus Summary - '+mLabel+'</h3>';
+// CC Team Pool - Category Breakdown
+const ccKpis=getCCTeamKPIs(currentMonth);
+const ccGross=getCCTeamTotal(currentMonth);
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-headset"></i> Customer Care Team Bonus Pool</h4>';
+h+='<table><thead><tr><th>Category</th><th>Attainment</th><th style="width:100px;">Amount</th></tr></thead><tbody>';
+ccKpis.forEach(kpi=>{
+const earned=getKPIEarned(kpi,d,'cc_team');
+const desc=(d.cc_team||{})[kpi.id+'_desc']||'';
+const autoAtt=getTeamAttainment(kpi,d.cc_team||{});
+const attText=desc||autoAtt;
+const displayName=getKPIDisplayName(kpi,currentMonth);
+h+='<tr><td style="font-weight:600;">'+displayName+'</td>';
+h+='<td style="font-size:13px;color:var(--text-muted);">'+(attText||'<em>No data entered</em>')+'</td>';
+h+='<td style="font-weight:600;color:var(--gold);">'+fmt(earned)+'</td></tr>';
+});
+h+='</tbody><tfoot>';
+h+='<tr style="background:rgba(212,168,67,0.1);"><td colspan="2" style="text-align:right;font-weight:700;">Total Team Bonus</td><td style="font-weight:700;color:var(--gold);font-size:16px;">'+fmt(ccNet)+'</td></tr>';
+h+='<tr><td colspan="2" style="text-align:right;">Divided among '+ccCount+' team members</td><td style="font-weight:600;">'+fmt(ccNet/ccCount)+'</td></tr>';
+h+='</tfoot></table></div>';
+// Admin Team Pool - Category Breakdown
+const adminKpis=getAdminTeamKPIs(currentMonth);
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-building"></i> Admin Team Bonus Pool</h4>';
+h+='<table><thead><tr><th>Category</th><th>Attainment</th><th style="width:100px;">Amount</th></tr></thead><tbody>';
+adminKpis.forEach(kpi=>{
+const earned=getKPIEarned(kpi,d,'admin_team');
+const desc=(d.admin_team||{})[kpi.id+'_desc']||'';
+const autoAtt=getTeamAttainment(kpi,d.admin_team||{});
+const attText=desc||autoAtt;
+const displayName=getKPIDisplayName(kpi,currentMonth);
+h+='<tr><td style="font-weight:600;">'+displayName+'</td>';
+h+='<td style="font-size:13px;color:var(--text-muted);">'+(attText||'<em>No data entered</em>')+'</td>';
+h+='<td style="font-weight:600;color:var(--gold);">'+fmt(earned)+'</td></tr>';
+});
+h+='</tbody><tfoot>';
+h+='<tr style="background:rgba(212,168,67,0.1);"><td colspan="2" style="text-align:right;font-weight:700;">Total Admin Bonus</td><td style="font-weight:700;color:var(--gold);font-size:16px;">'+fmt(adminTotal)+'</td></tr>';
+h+='<tr><td colspan="2" style="text-align:right;">Divided among '+adminCount+' team members</td><td style="font-weight:600;">'+fmt(adminTotal/adminCount)+'</td></tr>';
+h+='</tfoot></table></div>';
+// Individual KPI Bonus - Per-Category Attainment
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-user"></i> Individual KPI Bonus</h4>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>KPI Attainment by Category</th><th>Tow Deduction</th><th>Low Ded %</th><th>Top Bonus</th><th>Total Individual Bonus</th></tr></thead><tbody>';
+let grandTotal=0;
+ALL_MEMBERS.forEach(p=>{
+const indTotal=getIndividualTotal(currentMonth,p);
+const team=getTeamForPerson(p);
+let teamShare=0;
+if(team==='dual'){teamShare=(ccNet/ccCount)+(adminTotal/adminCount);}
+else if(team==='cc'){teamShare=ccNet/ccCount;}
+else{teamShare=adminTotal/adminCount;}
+const personDeds=(d.deductions||[]).filter(ded=>ded.person===p);
+const useP=currentMonth>='2026-06';
+const lowDed=getLowPerfDeduction(currentMonth,p);
+const adjTS=teamShare*(1-lowDed);
+const isTopRaw=(team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p);
+const isTop=isTopRaw&&currentMonth>='2026-06';
+const topBonus=isTop?25:0;
+const totalPreDed=indTotal+adjTS+topBonus;
+const progDed=calcProgressiveDeduction(totalPreDed,personDeds.length);
+const flatDedAmt_=indTotal*(Math.min(personDeds.length*25,100)/100);
+const towDedAmt=useP?progDed.total:flatDedAmt_;
+const final_=getFinalBonus(currentMonth,p);
+const isLow=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
+h+='<td style="font-weight:600;">'+p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td>'+(team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin')+'</td>';
+// Per-category attainment cell
+const kpis=getKPIsForPerson(p);
+const pData=d.individual[p]||{};
+if(kpis.length===0){
+h+='<td style="font-size:12px;color:var(--text-muted);"><em>Team share only (no individual KPIs)</em><br><strong style="color:var(--gold);">Total: '+fmt(indTotal)+'</strong></td>';
+}else{
+h+='<td style="font-size:12px;line-height:1.6;">';
+kpis.forEach(kpi=>{
+const val=parseFloat(pData[kpi.id])||0;
+const desc=pData[kpi.id+'_desc']||'';
+const displayName=getKPIDisplayName(kpi,currentMonth);
+const valColor=val>0?'var(--gold)':'var(--text-muted)';
+h+='<div style="margin-bottom:3px;"><strong>'+displayName+':</strong> <span style="color:'+valColor+';">'+fmt(val)+'</span>';
+if(desc) h+=' <span style="color:var(--text-muted);font-style:italic;"> — '+desc.replace(/</g,'&lt;')+'</span>';
+h+='</div>';
+});
+h+='<div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border);font-weight:700;color:var(--gold);">Total Individual: '+fmt(indTotal)+'</div>';
+h+='</td>';
+}
+h+='<td style="color:'+(towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">'+(towDedAmt>0?'-'+fmt(towDedAmt):'-')+'</td>';
+h+='<td>'+(lowDed*100)+'%</td>';
+h+='<td>'+fmt(topBonus)+'</td>';
+const netIndividual=indTotal+topBonus-towDedAmt;
+grandTotal+=netIndividual;
+h+='<td style="font-weight:700;color:var(--gold);">'+fmt(netIndividual)+'</td>';
+h+='</tr>';
+});
+h+='</tbody><tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(grandTotal)+'</td></tr></tfoot></table></div>';
+// Employee Rates & Max Cap Section (July 2026+)
+if(currentMonth>='2026-07'){
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-dollar-sign"></i> Employee Rates & Max Bonus Cap</h4>';
+h+='<p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Max Bonus = Hourly Rate x '+BASE_HOURS+' hours x 10%. The cap applies to base components (individual KPI + team share after deductions). Top Performer bonus ($25) is added on top of the cap.</p>';
+h+='<table><thead><tr><th>Employee</th><th>Rate ($/hr)</th><th>Base Pay ('+BASE_HOURS+'h)</th><th>Max Bonus (10%)</th></tr></thead><tbody>';
+ALL_MEMBERS.forEach(p=>{
+const rate=getEmployeeRate(currentMonth,p);
+const base=rate*BASE_HOURS;
+const cap=base*0.10;
+h+='<tr><td style="font-weight:600;">'+p+'</td>';
+h+='<td><input type="number" step="0.25" min="0" value="'+rate+'" style="width:70px;font-size:12px;padding:3px 5px;text-align:center;" onchange="updateEmployeeRate(\''+p+'\',this.value)"></td>';
+h+='<td>'+fmt(base)+'</td>';
+h+='<td style="font-weight:600;color:var(--gold);">'+fmt(cap)+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}
+// Total Bonus Section
+h+='<div style="margin-bottom:25px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-trophy"></i> Total Bonus Per Employee</h4>';
+const showCap=currentMonth>='2026-07';
+if(showCap){h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Ind. Bonus</th><th>Team Share</th><th>Tow Ded.</th><th>Ind+Team (After Ded.)</th><th>Max Cap</th><th>Top Perf. Bonus</th><th>Final Bonus</th></tr></thead><tbody>';}
+else{h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Ind. Bonus</th><th>Team Share</th><th>Tow Ded.</th><th>Ind+Team (After Ded.)</th><th>Top Perf. Bonus</th><th>Final Bonus</th></tr></thead><tbody>';}
+let finalGrandTotal=0;
+ALL_MEMBERS.forEach(p=>{
+const bd=getFinalBonusDetail(currentMonth,p);
+const team=getTeamForPerson(p);
+const finalBonus=bd.final;
+finalGrandTotal+=finalBonus;
+const isLow_=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+const subtotalAfterDed=Math.max(0,bd.indTotal+bd.adjTeamShare-bd.towDedAmt);
+h+='<tr'+(bd.isTop?' style="background:#4caf5015;"':'')+(isLow_?' style="background:#e74c3c15;"':'')+'>';
+h+='<td style="font-weight:600;">'+p+(bd.isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow_?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td>'+(team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin')+'</td>';
+h+='<td>'+fmt(bd.indTotal)+'</td>';
+h+='<td>'+fmt(bd.adjTeamShare)+(bd.lowDed>0?' <span style="font-size:10px;color:var(--danger);">(-'+(bd.lowDed*100)+'%)</span>':'')+'</td>';
+h+='<td style="color:'+(bd.towDedAmt>0?'var(--danger)':'var(--text-muted)')+';">'+(bd.towDedAmt>0?'-'+fmt(bd.towDedAmt)+' <span style="font-size:10px;">('+bd.towCount+' tow'+(bd.towCount>1?'s':'')+')</span>':'-')+'</td>';
+h+='<td>'+fmt(subtotalAfterDed)+'</td>';
+if(showCap){h+='<td style="font-size:12px;">'+fmt(bd.cap)+(bd.wasCapped?' <span style="color:var(--danger);font-size:10px;font-weight:600;">CAPPED</span>':'')+'</td>';}
+h+='<td style="color:'+(bd.topBonus>0?'var(--success)':'var(--text-muted)')+';">'+(bd.topBonus>0?'+'+fmt(bd.topBonus):'-')+'</td>';
+h+='<td style="font-weight:700;color:'+(bd.wasCapped?'var(--danger)':'var(--gold)')+';">'+fmt(finalBonus)+'</td>';
+h+='</tr>';
+});
+const colSpan=showCap?8:7;
+h+='</tbody><tfoot><tr><td colspan="'+colSpan+'" style="text-align:right;font-weight:700;">Grand Total</td><td style="font-weight:700;color:var(--gold);font-size:18px;">'+fmt(finalGrandTotal)+'</td></tr></tfoot></table></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="printSummary()"><i class="fas fa-print"></i> Print</button><button class="btn btn-info" onclick="exportSummary()"><i class="fas fa-download"></i> Export</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function printSummary(){window.print();}
+function exportSummary(){
+const d=getMonthData(currentMonth);
+const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
+let txt='YourSpot Rented - KPI Bonus Summary\n'+mLabel+'\n'+'='.repeat(50)+'\n\n';
+txt+='CC Team Pool: '+fmt(getCCTeamNet(currentMonth))+'\n';
+txt+='Admin Team Pool: '+fmt(getAdminTeamNet(currentMonth))+'\n\n';
+txt+='Employee Bonuses:\n'+'-'.repeat(50)+'\n';
+ALL_MEMBERS.forEach(p=>{
+const final_=getFinalBonus(currentMonth,p);
+const team=getTeamForPerson(p);
+const isTop=((team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p))&&currentMonth>='2026-06';
+const isLow=(team==='dual'&&(d.lowPerformer.cc===p||d.lowPerformer.admin===p))||(team==='cc'&&d.lowPerformer.cc===p)||(team==='admin'&&d.lowPerformer.admin===p);
+txt+=p.padEnd(15)+fmt(final_).padStart(10)+(isTop?' [TOP]':'')+(isLow?' [LOW]':'')+'\n';
+});
+const blob=new Blob([txt],{type:'text/plain'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='KPI_Bonus_'+currentMonth+'.txt';
+a.click();
+toast('Exported successfully');
+}
+
+function renderWeekly(){
+const d=getMonthData(currentMonth);
+const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamNet(currentMonth);
+const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const weeks=getWeekRanges(currentMonth);
+let h='<div class="form-section"><h3><i class="fas fa-calendar-week"></i> Weekly Status Report — '+mLabel+'</h3>';
+// Weekly Progress Timeline
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-calendar-alt"></i> Weekly Progress Timeline</h4>';
+h+='<table><thead><tr><th>Week</th><th>Dates</th>';
+CC_MEMBERS.forEach(p=>{h+='<th style="font-size:11px;">'+p+'</th>';});
+h+='<th style="font-size:11px;border-left:2px solid var(--gold);">CC Pool</th>';
+ADMIN_MEMBERS.forEach(p=>{h+='<th style="font-size:11px;">'+p+'</th>';});
+h+='<th style="font-size:11px;border-left:2px solid var(--gold);">Admin Pool</th></tr></thead><tbody>';
+weeks.forEach(w=>{
+h+='<tr><td style="font-weight:600;white-space:nowrap;">'+w.id.toUpperCase()+'</td><td style="font-size:11px;white-space:nowrap;">'+w.label.replace(/Week \d+ \(/,'').replace(')','')+'</td>';
+CC_MEMBERS.forEach(p=>{
+const kpis=getKPIsForPerson(p);let attainParts=[];
+kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
+h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
+});
+let ccWk=0;const ccKpis=getCCTeamKPIs(currentMonth);let ccParts=[];ccKpis.forEach(k=>{if(k.type==='weekly_avg_ratio'){const wrVal=d.cc_team[k.id];if(wrVal&&typeof wrVal==='object'){const wd=wrVal[w.id];if(wd&&typeof wd==='object'){const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;if(den>0){const pct=(num/den*100).toFixed(1);ccParts.push(k.name+': '+num+'/'+den+' ('+pct+'%)');}}}return;}const v=parseFloat((d.weeklyCC[k.id]||{})[w.id])||0;ccWk+=v;if(v>0)ccParts.push(v+' '+k.unit);});
+h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(ccWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+ccParts.join(', ')+'">'+(ccParts.length>0?ccParts.join(', '):'—')+'</td>';
+ADMIN_MEMBERS.forEach(p=>{
+const kpis=getKPIsForPerson(p);let attainParts=[];
+kpis.forEach(k=>{const key=p+'_'+k.id;const v=parseFloat((d.weeklyInd[key]||{})[w.id])||0;if(v>0)attainParts.push(v+' '+(k.unit||''));});
+h+='<td style="font-size:11px;color:'+(attainParts.length>0?'var(--gold)':'var(--text-muted)')+';" title="'+attainParts.join(', ')+'">'+(attainParts.length>0?attainParts.join(', '):'—')+'</td>';
+});
+let adWk=0;const adKpis=getAdminTeamKPIs(currentMonth);let adParts=[];adKpis.forEach(k=>{if(k.type==='endorsement_detail'){const eVal=d.admin_team.endorsements;if(eVal&&typeof eVal==='object'){const wd=eVal[w.id];if(wd&&wd.total>0){const t=parseFloat(wd.total),c=parseFloat(wd.completed)||0;const pct=(c/t*100).toFixed(1);adParts.push(t+' endors ('+pct+'%)');}}return;}if(k.type==='weekly_avg_tier'){const waVal=d.admin_team[k.id];if(waVal&&typeof waVal==='object'){const wv=parseFloat(waVal[w.id]);if(!isNaN(wv)&&wv>0)adParts.push(k.name+': '+wv.toFixed(1)+'%');}return;}if(k.type==='weekly_avg_ratio'){const wrVal=d.admin_team[k.id];if(wrVal&&typeof wrVal==='object'){const wd=wrVal[w.id];if(wd&&typeof wd==='object'){const num=parseFloat(wd.numerator)||0,den=parseFloat(wd.denominator)||0;if(den>0){const pct=(num/den*100).toFixed(1);adParts.push(k.name+': '+num+'/'+den+' ('+pct+'%)');}}}return;}if(k.type==='listing_revision'){const lrVal=d.admin_team[k.id];if(lrVal&&typeof lrVal==='object'){const wd=lrVal[w.id];if(wd){const nt=parseFloat(wd.nl_total)||0,nu=parseFloat(wd.nl_updated)||0,rt=parseFloat(wd.rev_total)||0,ru=parseFloat(wd.rev_updated)||0;if(nt>0||rt>0)adParts.push('NL:'+nu+'/'+nt+' Rev:'+ru+'/'+rt);}}return;}const v=parseFloat((d.weeklyAdmin[k.id]||{})[w.id])||0;adWk+=v;if(v>0)adParts.push(v+' '+k.unit);});
+h+='<td style="font-size:11px;border-left:2px solid var(--gold);color:'+(adWk>0?'var(--gold)':'var(--text-muted)')+';" title="'+adParts.join(', ')+'">'+(adParts.length>0?adParts.join(', '):'—')+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+// Team Pool Status
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">';
+h+='<div class="stat-card"><div class="stat-label">CC Team Pool</div><div class="stat-value">'+fmt(ccNet)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(ccNet/ccCount)+' (÷'+ccCount+')</div></div>';
+h+='<div class="stat-card"><div class="stat-label">Admin Team Pool</div><div class="stat-value">'+fmt(adminTotal)+'</div><div style="font-size:12px;color:var(--text-muted);">Per member: '+fmt(adminTotal/adminCount)+' (÷'+adminCount+')</div></div>';
+h+='</div>';
+// Individual KPI Rankings — CC Team
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-headset"></i> Customer Care Team — Individual KPI Rankings</h4>';
+h+='<table><thead><tr><th>#</th><th>Employee</th><th>Individual KPI Total</th><th>Tow Incidents</th><th>Status</th><th>Projected Final Bonus</th></tr></thead><tbody>';
+const ccScored=CC_MEMBERS.map(p=>{const s=getIndividualTotal(currentMonth,p);const deds=(d.deductions||[]).filter(x=>x.person===p);const fb=getFinalBonus(currentMonth,p);return{p,s,deds:deds.length,fb,dq:deds.length>0};}).sort((a,b)=>b.s-a.s);
+ccScored.forEach((r,i)=>{
+const isTop=d.topPerformer.cc===r.p;const isLow=d.lowPerformer.cc===r.p;
+h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
+h+='<td style="font-weight:700;">'+(i+1)+'</td>';
+h+='<td style="font-weight:600;">'+r.p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td style="color:var(--gold);font-weight:600;">'+fmt(r.s)+'</td>';
+h+='<td style="color:'+(r.deds>0?'var(--danger)':'var(--text-muted)')+';">'+r.deds+(r.dq?' <span style="font-size:10px;">(DQ from Top)</span>':'')+'</td>';
+h+='<td>'+(isTop?'<span style="color:#4caf50;font-weight:600;">Top Performer</span>':isLow?'<span style="color:var(--danger);font-weight:600;">Low Performer</span>':'<span style="color:var(--text-muted);">—</span>')+'</td>';
+h+='<td style="font-weight:600;">'+fmt(r.fb)+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+// Individual KPI Rankings — Admin Team
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-cogs"></i> Admin Team — Individual KPI Rankings</h4>';
+h+='<table><thead><tr><th>#</th><th>Employee</th><th>Individual KPI Total</th><th>Tow Incidents</th><th>Status</th><th>Projected Final Bonus</th></tr></thead><tbody>';
+const adScored=ADMIN_MEMBERS.map(p=>{const s=getIndividualTotal(currentMonth,p);const deds=(d.deductions||[]).filter(x=>x.person===p);const fb=getFinalBonus(currentMonth,p);return{p,s,deds:deds.length,fb,dq:deds.length>0};}).sort((a,b)=>b.s-a.s);
+adScored.forEach((r,i)=>{
+const isTop=d.topPerformer.admin===r.p;const isLow=d.lowPerformer.admin===r.p;
+h+='<tr'+(isTop?' style="background:#4caf5015;"':'')+(isLow?' style="background:#e74c3c15;"':'')+'>';
+h+='<td style="font-weight:700;">'+(i+1)+'</td>';
+h+='<td style="font-weight:600;">'+r.p+(isTop?' <span class="badge badge-top">TOP</span>':'')+(isLow?' <span class="badge badge-low">LOW</span>':'')+'</td>';
+h+='<td style="color:var(--gold);font-weight:600;">'+fmt(r.s)+'</td>';
+h+='<td style="color:'+(r.deds>0?'var(--danger)':'var(--text-muted)')+';">'+r.deds+(r.dq?' <span style="font-size:10px;">(DQ from Top)</span>':'')+'</td>';
+h+='<td>'+(isTop?'<span style="color:#4caf50;font-weight:600;">Top Performer</span>':isLow?'<span style="color:var(--danger);font-weight:600;">Low Performer</span>':'<span style="color:var(--text-muted);">—</span>')+'</td>';
+h+='<td style="font-weight:600;">'+fmt(r.fb)+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+// Dual Team Members
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-user-tie"></i> Dual Team Members (CC + Admin)</h4>';
+h+='<table><thead><tr><th>Employee</th><th>Title</th><th>Individual KPI Total</th><th>CC Share</th><th>Admin Share</th><th>Projected Final Bonus</th></tr></thead><tbody>';
+DUAL_TEAM_MEMBERS.forEach(p=>{
+const s=getIndividualTotal(currentMonth,p);const fb=getFinalBonus(currentMonth,p);
+h+='<tr><td style="font-weight:600;">'+p+'</td><td style="font-size:12px;color:var(--text-muted);">'+(MEMBER_TITLES[p]||'')+'</td>';
+h+='<td style="color:var(--gold);font-weight:600;">'+fmt(s)+'</td>';
+h+='<td>'+fmt(ccNet/ccCount)+'</td><td>'+fmt(adminTotal/adminCount)+'</td>';
+h+='<td style="font-weight:600;">'+fmt(fb)+'</td></tr>';
+});
+h+='</tbody></table></div>';
+// Deductions Summary
+const allDeds=d.deductions||[];
+if(allDeds.length>0){
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--danger);margin-bottom:10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions This Month</h4>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th># Incidents</th><th>Description</th><th>Deduction Amount</th></tr></thead><tbody>';
+const byPerson={};allDeds.forEach(dd=>{if(!byPerson[dd.person])byPerson[dd.person]=[];byPerson[dd.person].push(dd);});
+Object.keys(byPerson).forEach(p=>{
+const pDeds=byPerson[p];const team=getTeamForPerson(p);
+const indTotal=getIndividualTotal(currentMonth,p);
+const teamLabel=team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin';
+let ts=0;if(team==='dual')ts=(ccNet/ccCount)+(adminTotal/adminCount);else if(team==='cc')ts=ccNet/ccCount;else ts=adminTotal/adminCount;
+const lowD=getLowPerfDeduction(currentMonth,p);const adjTS=ts*(1-lowD);
+const isTopP=((team==='dual'&&(d.topPerformer.cc===p||d.topPerformer.admin===p))||(team==='cc'&&d.topPerformer.cc===p)||(team==='admin'&&d.topPerformer.admin===p))&&currentMonth>='2026-06';
+const topB=isTopP?25:0;const totalPre=indTotal+adjTS+topB;
+const prog=calcProgressiveDeduction(totalPre,pDeds.length);
+h+='<tr><td style="font-weight:600;">'+p+'</td><td>'+teamLabel+'</td><td style="color:var(--danger);font-weight:700;">'+pDeds.length+'</td>';
+h+='<td style="font-size:12px;">'+pDeds.map(x=>(x.description||'').replace(/</g,'&lt;')).join('<br>')+'</td>';
+h+='<td style="color:var(--danger);font-weight:700;">-'+fmt(prog.total)+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}
+// Low Performer Sanctions
+if(currentMonth>='2026-06'){
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-chart-line"></i> Low Performer Sanctions Status</h4>';
+h+='<table><thead><tr><th>Employee</th><th>Team</th><th>Consecutive Low Months</th><th>Current Sanction</th><th>Team Share Reduction</th></tr></thead><tbody>';
+let hasLow=false;
+ALL_MEMBERS.forEach(p=>{
+const consec=getConsecutiveLow(p,currentMonth);
+if(consec>0){hasLow=true;
+const team=getTeamForPerson(p);const teamLabel=team==='dual'?'CC + Admin':team==='cc'?'CC':'Admin';
+const sanction=getSanction(consec);const lowPct=getLowPerfDeduction(currentMonth,p)*100;
+h+='<tr><td style="font-weight:600;">'+p+'</td><td>'+teamLabel+'</td>';
+h+='<td style="text-align:center;color:var(--danger);font-weight:700;">'+consec+'</td>';
+h+='<td style="color:var(--danger);">'+sanction+'</td>';
+h+='<td style="color:var(--danger);font-weight:700;">-'+lowPct+'%</td></tr>';
+}});
+if(!hasLow)h+='<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:15px;">No active low performer sanctions this month.</td></tr>';
+h+='</tbody></table></div>';
+}
+// Weekly Notes
+if(!d.weeklyNotes)d.weeklyNotes={};
+h+='<div style="margin-bottom:20px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-sticky-note"></i> Weekly Notes</h4>';
+['Week 1','Week 2','Week 3','Week 4','Week 5'].forEach(w=>{
+h+='<div style="margin-bottom:10px;"><label style="display:block;margin-bottom:4px;font-weight:600;color:var(--text-muted);font-size:13px;">'+w+'</label>';
+h+='<textarea rows="2" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;resize:vertical;" onchange="updateWeeklyNote(\''+w+'\',this.value)">'+(d.weeklyNotes[w]||'').replace(/</g,'&lt;')+'</textarea></div>';
+});
+h+='</div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveData();toast(\'Weekly status saved\');"><i class="fas fa-save"></i> Save</button><button class="btn btn-info" onclick="exportWeekly()"><i class="fas fa-download"></i> Export Weekly Report</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+function updateWeeklyNote(week,val){const d=getMonthData(currentMonth);if(!d.weeklyNotes)d.weeklyNotes={};d.weeklyNotes[week]=val;}
+function exportWeekly(){
+const d=getMonthData(currentMonth);const mLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const ccNet=getCCTeamNet(currentMonth);const adminTotal=getAdminTeamNet(currentMonth);
+const ccCount=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const adminCount=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;
+const expWeeks=getWeekRanges(currentMonth);
+let txt='YourSpot Rented - Weekly Status Report\n'+mLabel+'\nGenerated: '+new Date().toLocaleDateString()+'\n'+'='.repeat(60)+'\n\n';
+txt+='WEEKLY PROGRESS TIMELINE (Attainment)\n'+'-'.repeat(40)+'\n';
+expWeeks.forEach(w=>{
+txt+=w.label+':\n';
+CC_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(k=>{const v=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;if(v>0)parts.push(v+' '+(k.unit||''));});txt+='  '+p.padEnd(12)+' '+(parts.length>0?parts.join(', '):'—')+'\n';});
+ADMIN_MEMBERS.forEach(p=>{const kpis=getKPIsForPerson(p);let parts=[];kpis.forEach(k=>{const v=parseFloat((d.weeklyInd[p+'_'+k.id]||{})[w.id])||0;if(v>0)parts.push(v+' '+(k.unit||''));});txt+='  '+p.padEnd(12)+' '+(parts.length>0?parts.join(', '):'—')+'\n';});
+});
+txt+='\nTEAM POOL STATUS\n'+'-'.repeat(40)+'\n';
+txt+='CC Team Pool: '+fmt(ccNet)+' | Per member: '+fmt(ccNet/ccCount)+'\n';
+txt+='Admin Team Pool: '+fmt(adminTotal)+' | Per member: '+fmt(adminTotal/adminCount)+'\n\n';
+txt+='CC TEAM RANKINGS\n'+'-'.repeat(40)+'\n';
+CC_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),fb:getFinalBonus(currentMonth,p),deds:(d.deductions||[]).filter(x=>x.person===p).length})).sort((a,b)=>b.s-a.s).forEach((r,i)=>{
+const tag=d.topPerformer.cc===r.p?' [TOP]':d.lowPerformer.cc===r.p?' [LOW]':'';
+txt+=(i+1)+'. '+r.p.padEnd(12)+' KPI: '+fmt(r.s).padStart(8)+' | Tows: '+r.deds+' | Final: '+fmt(r.fb).padStart(8)+tag+'\n';
+});
+txt+='\nADMIN TEAM RANKINGS\n'+'-'.repeat(40)+'\n';
+ADMIN_MEMBERS.map(p=>({p,s:getIndividualTotal(currentMonth,p),fb:getFinalBonus(currentMonth,p),deds:(d.deductions||[]).filter(x=>x.person===p).length})).sort((a,b)=>b.s-a.s).forEach((r,i)=>{
+const tag=d.topPerformer.admin===r.p?' [TOP]':d.lowPerformer.admin===r.p?' [LOW]':'';
+txt+=(i+1)+'. '+r.p.padEnd(12)+' KPI: '+fmt(r.s).padStart(8)+' | Tows: '+r.deds+' | Final: '+fmt(r.fb).padStart(8)+tag+'\n';
+});
+txt+='\nDUAL TEAM MEMBERS\n'+'-'.repeat(40)+'\n';
+DUAL_TEAM_MEMBERS.forEach(p=>{txt+=p+' ('+MEMBER_TITLES[p]+') | KPI: '+fmt(getIndividualTotal(currentMonth,p))+' | Final: '+fmt(getFinalBonus(currentMonth,p))+'\n';});
+const allDeds=d.deductions||[];
+if(allDeds.length>0){txt+='\nDEDUCTIONS\n'+'-'.repeat(40)+'\n';allDeds.forEach(dd=>{txt+=dd.person+': '+dd.description+'\n';});}
+if(d.weeklyNotes){txt+='\nWEEKLY NOTES\n'+'-'.repeat(40)+'\n';['Week 1','Week 2','Week 3','Week 4','Week 5'].forEach(w=>{if(d.weeklyNotes[w])txt+=w+': '+d.weeklyNotes[w]+'\n';});}
+const blob=new Blob([txt],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Weekly_Status_'+currentMonth+'.txt';a.click();toast('Weekly report exported');
+}
+
+function renderTracker(){
+let h='<div class="form-section"><h3><i class="fas fa-chart-line"></i> Performance Tracker - All Months</h3>';
+h+='<div style="overflow-x:auto;"><table><thead><tr><th>Employee</th>';
+MONTHS.forEach(m=>{h+='<th>'+m.label.split(' ')[0].substring(0,3)+'</th>';});
+h+='<th>Consec. Low</th><th>Sanction</th></tr></thead><tbody>';
+ALL_MEMBERS.forEach(p=>{
+h+='<tr><td>'+p+'</td>';
+const team=getTeamForPerson(p);
+MONTHS.forEach(m=>{
+const md=getMonthData(m.key);
+const isTopRaw=(team==='dual'&&(md.topPerformer.cc===p||md.topPerformer.admin===p))||(team==='cc'&&md.topPerformer.cc===p)||(team==='admin'&&md.topPerformer.admin===p);
+const isTop=isTopRaw&&m.key>='2026-06';
+const isLow=(team==='dual'&&(md.lowPerformer.cc===p||md.lowPerformer.admin===p))||(team==='cc'&&md.lowPerformer.cc===p)||(team==='admin'&&md.lowPerformer.admin===p);
+if(isTop)h+='<td><span class="badge badge-top">TOP</span></td>';
+else if(isLow)h+='<td><span class="badge badge-low">LOW</span></td>';
+else h+='<td><span class="badge badge-none">-</span></td>';
+});
+const consec=getConsecutiveLow(p,MONTHS[MONTHS.length-1].key);
+const sanction=getSanction(consec);
+h+='<td style="text-align:center;font-weight:700;'+(consec>0?'color:var(--danger);':'')+'">'+(consec||'-')+'</td>';
+h+='<td style="font-size:12px;'+(consec>0?'color:var(--danger);':'')+'">'+(consec>0?sanction:'None')+'</td>';
+h+='</tr>';
+});
+h+='</tbody></table></div></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+let perfRatingTab='cc';
+let tlCoachingTab='cc';
+// Team Lead Coaching constants
+const TL_CC_RATERS=['Gwen','Hazel'];
+const TL_CC_MEMBERS=['Donita','Michael','Angel','Christine'];
+const TL_ADMIN_RATERS=['Joan','Hazel'];
+const TL_ADMIN_MEMBERS=['Lovely','Jian'];
+const TL_RATED_MEMBERS=['Donita','Michael','Angel','Christine','Lovely','Jian'];
+
+function getTLRatings(m,person){
+const d=getMonthData(m);
+if(!d.tlRatings||!d.tlRatings[person])return{};
+const raters=Object.keys(d.tlRatings[person]);
+if(raters.length===0)return{};
+const avg={};
+COMPETENCIES.forEach(c=>{
+let sum=0,cnt=0;
+raters.forEach(r=>{
+const v=d.tlRatings[person][r]&&d.tlRatings[person][r].competencies?parseFloat(d.tlRatings[person][r].competencies[c])||0:0;
+if(v>0){sum+=v;cnt++;}
+});
+if(cnt>0)avg[c]=Math.round(sum/cnt*10)/10;
+});
+return avg;
+}
+
+function renderTLCoaching(){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const isCC=tlCoachingTab==='cc';
+const raters=isCC?TL_CC_RATERS:TL_ADMIN_RATERS;
+const members=isCC?TL_CC_MEMBERS:TL_ADMIN_MEMBERS;
+const teamLead=isCC?'Gwen':'Joan';
+let h='<div class="tabs">';
+h+='<div class="tab'+(isCC?' active':'')+'" onclick="tlCoachingTab=\'cc\';renderTLCoaching()"><i class="fas fa-headset"></i> CC Team</div>';
+h+='<div class="tab'+(isCC?'':' active')+'" onclick="tlCoachingTab=\'admin\';renderTLCoaching()"><i class="fas fa-cogs"></i> Admin Team</div>';
+h+='</div>';
+// Team info card
+h+='<div class="form-section" style="margin-bottom:15px;padding:15px;">';
+h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-user-tie"></i> Team Lead:</strong> <span>'+teamLead+'</span></div>';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-users"></i> Raters:</strong> <span>'+raters.join(', ')+'</span></div>';
+h+='<div><strong style="color:var(--gold);"><i class="fas fa-calendar"></i> Period:</strong> <span>'+monthLabel+'</span></div>';
+h+='</div></div>';
+// Per member coaching cards
+members.forEach(person=>{
+if(!d.tlRatings[person])d.tlRatings[person]={};
+const avgScores=getTLRatings(currentMonth,person);
+const avgVals=Object.values(avgScores).filter(v=>v>0);
+const overallAvg=avgVals.length>0?(avgVals.reduce((a,b)=>a+b,0)/avgVals.length):0;
+const overallNorm=overallAvg>0?((overallAvg-1)/4*100):0;
+const oColor=overallNorm>=90?'var(--success)':overallNorm>=70?'var(--gold)':overallNorm>=50?'var(--warning)':'var(--danger)';
+h+='<div class="form-section" style="margin-bottom:20px;">';
+h+='<h3><i class="fas fa-user-circle"></i> '+person+'</h3>';
+// Averaged score summary
+if(avgVals.length>0){
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid '+oColor+';">';
+h+='<span style="color:var(--text-muted);font-size:13px;"><i class="fas fa-calculator"></i> Averaged Competency Score ('+raters.length+' raters)</span>';
+h+='<span style="font-size:18px;font-weight:700;color:'+oColor+';">'+overallAvg.toFixed(1)+'/5 <span style="font-size:12px;color:var(--text-muted);">('+Math.round(overallNorm)+'%)</span></span>';
+h+='</div>';
+}
+// Per-rater tabs
+raters.forEach(rater=>{
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+const rd=d.tlRatings[person][rater];
+if(!rd.competencies)rd.competencies={};
+h+='<div style="background:rgba(212,168,67,0.04);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;">';
+h+='<div style="font-weight:600;color:var(--gold);font-size:13px;margin-bottom:8px;"><i class="fas fa-user-edit"></i> Rated by: '+rater+'</div>';
+// Competency inputs
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px;margin-bottom:10px;">';
+COMPETENCIES.forEach(comp=>{
+const val=rd.competencies[comp]||'';
+const avgVal=avgScores[comp];
+h+='<div style="display:flex;align-items:center;gap:6px;background:var(--navy-dark);padding:6px 10px;border-radius:5px;">';
+h+='<label style="flex:1;font-size:12px;color:var(--text);">'+comp+'</label>';
+h+='<select style="width:75px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:5px;border-radius:4px;font-size:12px;" onchange="updateTLCompetency(\''+person+'\',\''+rater+'\',\''+comp+'\',this.value)">';
+h+='<option value=""'+(val===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(val==i?' selected':'')+'>'+i+'</option>';}
+h+='</select>';
+if(val){const vc=val>=4?'var(--success)':val>=3?'var(--gold)':val>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:10px;font-weight:700;color:'+vc+';min-width:16px;">'+val+'</span>';}
+if(avgVal){h+='<span style="font-size:9px;color:var(--text-muted);" title="Average">avg:'+avgVal.toFixed(1)+'</span>';}
+h+='</div>';
+});
+h+='</div>';
+// Coaching notes for this rater
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+h+='<div><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-star"></i> Strengths</label>';
+h+='<textarea style="min-height:50px;font-size:12px;" placeholder="Key strengths..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'strengths\',this.value)">'+((rd.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-arrow-up"></i> Development</label>';
+h+='<textarea style="min-height:50px;font-size:12px;" placeholder="Areas for growth..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'development\',this.value)">'+((rd.development||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+h+='<div style="margin-top:8px;"><label style="display:block;color:var(--gold);font-size:12px;font-weight:600;margin-bottom:3px;"><i class="fas fa-tasks"></i> Action Items</label>';
+h+='<textarea style="min-height:45px;font-size:12px;" placeholder="Action items and follow-up..." onchange="updateTLField(\''+person+'\',\''+rater+'\',\'actionItems\',this.value)">'+((rd.actionItems||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+});
+// Averaged competency summary table
+if(avgVals.length>0){
+h+='<div style="margin-top:8px;"><strong style="color:var(--gold);font-size:12px;"><i class="fas fa-table"></i> Averaged Scores Summary</strong>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px;margin-top:4px;">';
+COMPETENCIES.forEach(comp=>{
+const av=avgScores[comp]||0;
+const ac=av>=4?'var(--success)':av>=3?'var(--gold)':av>=2?'var(--warning)':av>0?'var(--danger)':'var(--text-muted)';
+h+='<div style="display:flex;justify-content:space-between;background:var(--navy-dark);padding:5px 8px;border-radius:4px;font-size:11px;">';
+h+='<span style="color:var(--text);">'+comp+'</span>';
+h+='<span style="font-weight:700;color:'+ac+';">'+(av>0?av.toFixed(1)+'/5':'—')+'</span>';
+h+='</div>';
+});
+h+='</div></div>';
+}
+h+='</div>';
+});
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveTLCoaching()"><i class="fas fa-save"></i> Save All Ratings</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function updateTLCompetency(person,rater,comp,val){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+if(!d.tlRatings[person])d.tlRatings[person]={};
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+if(!d.tlRatings[person][rater].competencies)d.tlRatings[person][rater].competencies={};
+d.tlRatings[person][rater].competencies[comp]=val?parseInt(val):'';
+renderTLCoaching();
+}
+
+function updateTLField(person,rater,field,val){
+const d=getMonthData(currentMonth);
+if(!d.tlRatings)d.tlRatings={};
+if(!d.tlRatings[person])d.tlRatings[person]={};
+if(!d.tlRatings[person][rater])d.tlRatings[person][rater]={competencies:{},coachingNotes:'',strengths:'',development:'',actionItems:''};
+d.tlRatings[person][rater][field]=val;
+}
+
+function saveTLCoaching(){saveData();toast('Team Lead ratings saved');}
+
+function renderPerfRating(){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const ccList=[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualFiltered];
+const adminList=[...ADMIN_MEMBERS,...dualFiltered];
+const members=perfRatingTab==='cc'?ccList:adminList;
+let h='<div class="tabs">';
+h+='<div class="tab'+(perfRatingTab==='cc'?' active':'')+'" onclick="perfRatingTab=\'cc\';renderPerfRating()"><i class="fas fa-headset"></i> CC Team</div>';
+h+='<div class="tab'+(perfRatingTab==='admin'?' active':'')+'" onclick="perfRatingTab=\'admin\';renderPerfRating()"><i class="fas fa-cogs"></i> Admin Team</div>';
+h+='</div>';
+h+='<div style="display:flex;justify-content:flex-end;margin-bottom:15px;gap:10px;">';
+h+='<button class="btn btn-info btn-sm" onclick="exportPerfRatingCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>';
+h+='<button class="btn btn-gold btn-sm" onclick="exportPerfRatingPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>';
+h+='<button class="btn btn-sm" style="background:var(--success);color:#fff;" onclick="window.print()"><i class="fas fa-print"></i> Print</button>';
+h+='</div>';
+members.forEach(person=>{
+const kpis=getKPIsForPerson(person);
+const pData=d.individual[person]||{};
+const indTotal=getIndividualTotal(currentMonth,person);
+const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
+const overallPct=maxTotal>0?Math.round(indTotal/maxTotal*100):0;
+const finalBonus=getFinalBonus(currentMonth,person);
+const team=getTeamForPerson(person);
+// Weighted performance score
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
+const autoRating=autoInfo.rating;const autoColor=autoInfo.color;
+// Top/Low performer status
+const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
+const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
+const consecLow=getConsecutiveLow(person,currentMonth);
+const sanction=getSanction(consecLow);
+// Manual rating data
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{},towScoreOverride:''};
+const pr=d.perfRatings[person];
+if(!pr.competencies)pr.competencies={};
+const manualVal=pr.manualRating||'';
+// Met vs below KPIs
+const metCount=kpis.filter(k=>(parseFloat(pData[k.id])||0)>=k.max).length;
+const belowCount=kpis.length-metCount;
+h+='<div class="form-section coaching-print" style="margin-bottom:20px;">';
+h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><span><i class="fas fa-user-circle"></i> '+person+(MEMBER_TITLES[person]?' <span style="font-size:12px;color:var(--text-muted);font-weight:400;">('+MEMBER_TITLES[person]+')</span>':'')+'</span>';
+h+='<span style="font-size:13px;color:var(--text-muted);font-weight:400;">'+monthLabel+'</span></h3>';
+// Summary cards row
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px;">';
+if(ws.noData){
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:var(--text-muted);">—</div><div style="font-size:11px;color:var(--text-muted);">No data yet</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:var(--text-muted);">—</div><div style="font-size:11px;color:var(--text-muted);">No data yet</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
+}else{
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:20px;font-weight:700;color:'+autoColor+';">'+ws.weighted.toFixed(1)+'%</div><div style="font-size:11px;color:var(--text-muted);">9-factor weighted</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Individual KPI</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+overallPct+'%</div><div style="font-size:11px;color:var(--text-muted);">50% weight</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+autoColor+';">'+autoRating+'</div><div style="font-size:11px;color:var(--text-muted);">Based on weighted</div></div>';
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Final Bonus</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+fmt(finalBonus)+'</div><div style="font-size:11px;color:var(--text-muted);">Total payout</div></div>';
+}
+h+='<div style="background:var(--navy-dark);padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Status</div><div style="font-size:14px;font-weight:700;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--text)')+';">'+(isTop?'<i class="fas fa-trophy"></i> Top':isLow?'<i class="fas fa-exclamation-triangle"></i> Low':'Standard')+'</div><div style="font-size:11px;color:var(--text-muted);">'+sanction+'</div></div>';
+h+='</div>';
+// Weighted Score Breakdown
+if(!ws.noData){
+h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
+h+='<strong style="color:var(--gold);font-size:13px;"><i class="fas fa-balance-scale"></i> Weighted Score Breakdown</strong>';
+h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">';
+h+='<div style="font-size:12px;color:var(--text-muted);">KPI (50%): <strong style="color:var(--text);">'+ws.kpiPct+'%</strong> → <span style="color:var(--gold);">'+(ws.kpiPct*0.5).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">Tow Deductions (10%): <strong style="color:var(--text);">'+ws.towScore+'/5</strong> → <span style="color:var(--gold);">'+(ws.towNorm*0.1).toFixed(1)+'</span></div>';
+h+='<div style="font-size:12px;color:var(--text-muted);">Competencies (40%): <strong style="color:var(--text);">'+ws.compAvg+'%</strong> → <span style="color:var(--gold);">'+(ws.compAvg*0.4).toFixed(1)+'</span></div>';
+h+='</div></div>';
+}else{
+h+='<div style="background:rgba(212,168,67,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">';
+h+='<div style="font-size:12px;color:var(--text-muted);text-align:center;"><i class="fas fa-info-circle"></i> No data entered yet for this month. Weighted scores and ratings will compute once KPIs, competencies, or TL ratings are submitted.</div>';
+h+='</div>';
+}
+// Competency Ratings
+const isTLFed=currentMonth>='2026-07'&&TL_RATED_MEMBERS.includes(person);
+const tlAvgScores=isTLFed?getTLRatings(currentMonth,person):{};
+h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-clipboard-check"></i> Competency Ratings</strong> <span style="font-size:11px;color:var(--text-muted);">(1=Poor, 2=Below, 3=Meets, 4=Exceeds, 5=Outstanding)</span>';
+if(isTLFed){h+='<div style="font-size:11px;color:var(--info);margin-top:4px;"><i class="fas fa-info-circle"></i> Auto-populated from Team Lead Coaching (averaged). Manual edits override.</div>';}
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-top:8px;">';
+COMPETENCIES.forEach(comp=>{
+const mergedComp=getCompetencyRatings(currentMonth,person);
+const val=mergedComp[comp]||pr.competencies[comp]||'';
+h+='<div style="display:flex;align-items:center;gap:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);min-width:180px;">'+comp+'</label>';
+h+='<select style="width:80px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:13px;" onchange="updatePerfCompetency(\''+person+'\',\''+comp+'\',this.value)">';
+h+='<option value=""'+(val===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(val==i?' selected':'')+'>'+i+' - '+COMP_LABELS[i]+'</option>';}
+h+='</select>';
+if(val){const vColor=val>=4?'var(--success)':val>=3?'var(--gold)':val>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:11px;font-weight:700;color:'+vColor+';min-width:20px;">'+val+'/5</span>';}
+h+='</div>';
+});
+h+='</div>';
+// Invalid Tow Deductions score
+const towS=getTowScore(currentMonth,person);
+const towDedCount=(d.deductions||[]).filter(ded=>ded.person===person).length;
+const towColor=towS>=4?'var(--success)':towS>=3?'var(--gold)':towS>=2?'var(--warning)':'var(--danger)';
+h+='<div style="display:flex;align-items:center;gap:12px;margin-top:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);"><i class="fas fa-truck"></i> Invalid Tow Deductions Score</label>';
+h+='<span style="font-size:12px;color:var(--text-muted);">'+towDedCount+' invalid tow'+(towDedCount!==1?'s':'')+'</span>';
+h+='<span style="font-size:14px;font-weight:700;color:'+towColor+';">'+towS+'/5</span>';
+h+='</div>';
+h+='</div>';
+// KPI breakdown table
+if(kpis.length>0){
+h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-chart-bar"></i> KPI Breakdown</strong> <span style="font-size:12px;color:var(--text-muted);">('+metCount+' met, '+belowCount+' below)</span>';
+h+='<table style="margin-top:5px;"><thead><tr><th>KPI</th><th>Max</th><th>Actual</th><th>%</th><th>Status</th></tr></thead><tbody>';
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+const pct=kpi.max>0?Math.round(actual/kpi.max*100):0;
+const displayName=getKPIDisplayName(kpi,currentMonth);
+const icon=actual>=kpi.max?'<i class="fas fa-check-circle" style="color:var(--success);"></i>':actual>0?'<i class="fas fa-minus-circle" style="color:var(--warning);"></i>':'<i class="fas fa-times-circle" style="color:var(--danger);"></i>';
+h+='<tr><td style="font-size:13px;">'+displayName+'</td><td>'+fmt(kpi.max)+'</td><td>'+fmt(actual)+'</td><td style="font-weight:700;color:'+(pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)')+';">'+pct+'%</td><td>'+icon+'</td></tr>';
+});
+h+='</tbody></table></div>';
+}
+// Manual override rating
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:12px;">';
+h+='<div><label style="display:block;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:5px;"><i class="fas fa-pen"></i> Manager Rating (Override)</label>';
+h+='<select style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;" onchange="updatePerfRating(\''+person+'\',\'manualRating\',this.value)">';
+h+='<option value=""'+(manualVal===''?' selected':'')+'>— Use Auto Rating —</option>';
+h+='<option value="Exceeds Expectations"'+(manualVal==='Exceeds Expectations'?' selected':'')+'>Exceeds Expectations</option>';
+h+='<option value="Meets Expectations"'+(manualVal==='Meets Expectations'?' selected':'')+'>Meets Expectations</option>';
+h+='<option value="Needs Improvement"'+(manualVal==='Needs Improvement'?' selected':'')+'>Needs Improvement</option>';
+h+='<option value="Below Expectations"'+(manualVal==='Below Expectations'?' selected':'')+'>Below Expectations</option>';
+h+='</select></div>';
+h+='<div><label style="display:block;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:5px;"><i class="fas fa-calendar"></i> Next Review Date</label>';
+h+='<input type="date" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;" value="'+(pr.nextReview||'')+'" onchange="updatePerfRating(\''+person+'\',\'nextReview\',this.value)"></div>';
+h+='</div>';
+// Coaching notes
+h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:12px;">';
+h+='<div><label style="display:block;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:5px;"><i class="fas fa-star"></i> Key Strengths</label>';
+h+='<textarea style="min-height:60px;" placeholder="Note key strengths observed..." onchange="updatePerfRating(\''+person+'\',\'strengths\',this.value)">'+((pr.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div><label style="display:block;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:5px;"><i class="fas fa-arrow-up"></i> Development Areas</label>';
+h+='<textarea style="min-height:60px;" placeholder="Areas for growth and development..." onchange="updatePerfRating(\''+person+'\',\'development\',this.value)">'+((pr.development||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+h+='<div style="margin-top:12px;"><label style="display:block;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:5px;"><i class="fas fa-tasks"></i> Action Items & Coaching Notes</label>';
+h+='<textarea style="min-height:70px;" placeholder="Specific action items, coaching plans, follow-up tasks..." onchange="updatePerfRating(\''+person+'\',\'actionItems\',this.value)">'+((pr.actionItems||'').replace(/</g,'&lt;'))+'</textarea></div>';
+// Effective rating display
+const effectiveRating=manualVal||autoRating;
+const effColor=effectiveRating==='Exceeds Expectations'?'var(--success)':effectiveRating==='Meets Expectations'?'var(--gold)':effectiveRating==='Needs Improvement'?'var(--warning)':'var(--danger)';
+h+='<div style="margin-top:12px;padding:10px 15px;background:var(--navy-dark);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid '+effColor+';">';
+h+='<span style="font-size:13px;color:var(--text-muted);">Effective Rating:</span>';
+h+='<span style="font-weight:700;color:'+effColor+';font-size:15px;">'+(ws.noData&&!manualVal?'<span style="color:var(--text-muted);">No data yet</span>':effectiveRating+(manualVal?' <i class="fas fa-pen" style="font-size:10px;" title="Manually overridden"></i>':'')+'  <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(Weighted: '+(ws.noData?'—':ws.weighted.toFixed(1)+'%')+')</span>')+'</span>';
+h+='</div>';
+h+='</div>';
+});
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="savePerfRating()"><i class="fas fa-save"></i> Save All Ratings</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+function updatePerfRating(person,field,val){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[person].competencies)d.perfRatings[person].competencies={};
+d.perfRatings[person][field]=val;
+}
+function updatePerfCompetency(person,comp,val){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[person])d.perfRatings[person]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[person].competencies)d.perfRatings[person].competencies={};
+d.perfRatings[person].competencies[comp]=val?parseInt(val):'';
+}
+function savePerfRating(){saveData();toast('Performance ratings saved');}
+function exportPerfRatingCSV(){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const dualF=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualF]:[...ADMIN_MEMBERS,...dualF];
+let csv='Team Member,Team,Weighted Score,Individual KPI %,Tow Score,'+COMPETENCIES.join(',')+',Auto Rating,Manager Rating,Effective Rating,Final Bonus,Status,Key Strengths,Development Areas,Action Items,Next Review\n';
+members.forEach(person=>{
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
+const finalBonus=getFinalBonus(currentMonth,person);
+const team=getTeamForPerson(person);
+const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
+const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
+const pr=d.perfRatings[person]||{};
+const comp=pr.competencies||{};
+const effectiveRating=pr.manualRating||autoInfo.rating;
+const esc=s=>'"'+(s||'').replace(/"/g,'""')+'"';
+csv+=esc(person)+','+esc(perfRatingTab==='cc'?'CC Team':'Admin Team')+','+ws.weighted.toFixed(1)+'%,'+ws.kpiPct+'%,'+ws.towScore+'/5,'+COMPETENCIES.map(c=>(comp[c]||'-')+'/5').join(',')+','+esc(autoInfo.rating)+','+esc(pr.manualRating||'(Auto)')+','+esc(effectiveRating)+','+finalBonus.toFixed(2)+','+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+','+esc(pr.strengths)+','+esc(pr.development)+','+esc(pr.actionItems)+','+esc(pr.nextReview)+'\n';
+});
+const blob=new Blob([csv],{type:'text/csv'});
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Performance_Rating_'+(perfRatingTab==='cc'?'CC':'Admin')+'_'+currentMonth+'.csv';a.click();
+toast('CSV exported');
+}
+function exportPerfRatingPDF(){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+const monthLabel=MONTHS.find(m=>m.key===currentMonth).label;
+const dualPdf=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const members=perfRatingTab==='cc'?[...CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel'),...dualPdf]:[...ADMIN_MEMBERS,...dualPdf];
+const teamName=perfRatingTab==='cc'?'CC Team':'Admin Team';
+let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Performance Rating - '+teamName+' - '+monthLabel+'</title>';
+html+='<style>body{font-family:Arial,sans-serif;margin:20px;color:#333;}h1{color:#1B2A4A;border-bottom:3px solid #D4A843;padding-bottom:10px;}';
+html+='.member{page-break-inside:avoid;border:1px solid #ddd;border-radius:8px;padding:15px;margin:15px 0;background:#fafafa;}';
+html+='.member h2{color:#1B2A4A;margin:0 0 10px;font-size:16px;border-bottom:1px solid #D4A843;padding-bottom:5px;}';
+html+='.cards{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}.card{flex:1;min-width:120px;border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center;background:#fff;}';
+html+='.card .lbl{font-size:10px;color:#888;text-transform:uppercase;}.card .val{font-size:16px;font-weight:700;color:#1B2A4A;margin:4px 0;}';
+html+='table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0;}th{background:#1B2A4A;color:#D4A843;padding:6px 8px;text-align:left;}td{padding:5px 8px;border-bottom:1px solid #eee;}';
+html+='.rating{padding:6px 12px;border-radius:4px;font-weight:700;display:inline-block;margin:5px 0;}';
+html+='.notes{margin-top:8px;}.notes strong{color:#1B2A4A;font-size:12px;}.notes p{font-size:12px;margin:2px 0;color:#555;white-space:pre-wrap;}';
+html+='.exceeds{background:#e8f5e9;color:#2e7d32;}.meets{background:#fff8e1;color:#f57f17;}.needs{background:#fff3e0;color:#e65100;}.below{background:#ffebee;color:#c62828;}';
+html+='</style></head><body>';
+html+='<h1><img src="" style="display:none;">Performance Rating Report — '+teamName+' — '+monthLabel+'</h1>';
+members.forEach(person=>{
+const kpis=getKPIsForPerson(person);
+const pData=d.individual[person]||{};
+const ws=calcWeightedPerfScore(currentMonth,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
+const finalBonus=getFinalBonus(currentMonth,person);
+const team=getTeamForPerson(person);
+const pr=d.perfRatings[person]||{};
+const comp=pr.competencies||{};
+const effectiveRating=pr.manualRating||autoInfo.rating;
+const ratingClass=effectiveRating.includes('Exceeds')?'exceeds':effectiveRating.includes('Meets')?'meets':effectiveRating.includes('Needs')?'needs':'below';
+const isTop=((team==='dual'&&(d.topPerformer.cc===person||d.topPerformer.admin===person))||(team==='cc'&&d.topPerformer.cc===person)||(team==='admin'&&d.topPerformer.admin===person))&&currentMonth>='2026-06';
+const isLow=(team==='dual'&&(d.lowPerformer.cc===person||d.lowPerformer.admin===person))||(team==='cc'&&d.lowPerformer.cc===person)||(team==='admin'&&d.lowPerformer.admin===person);
+html+='<div class="member"><h2>'+person+(MEMBER_TITLES[person]?' ('+MEMBER_TITLES[person]+')':'')+'</h2>';
+html+='<div class="cards"><div class="card"><div class="lbl">Weighted Score</div><div class="val">'+(ws.noData?'—':ws.weighted.toFixed(1)+'%')+'</div><div class="lbl">'+(ws.noData?'No data yet':'KPI '+ws.kpiPct+'% | Tow '+ws.towScore+'/5')+'</div></div>';
+html+='<div class="card"><div class="lbl">Final Bonus</div><div class="val">$'+finalBonus.toFixed(2)+'</div></div>';
+html+='<div class="card"><div class="lbl">Status</div><div class="val">'+(isTop?'Top Performer':isLow?'Low Performer':'Standard')+'</div></div>';
+html+='<div class="card"><div class="lbl">Rating</div><div class="rating '+ratingClass+'">'+effectiveRating+(pr.manualRating?' *':'')+'</div></div></div>';
+// Competency ratings table
+html+='<table><tr><th>Competency / Factor</th><th>Score</th><th>Weight</th></tr>';
+html+='<tr><td>Individual KPI</td><td style="font-weight:700;">'+ws.kpiPct+'%</td><td>50%</td></tr>';
+html+='<tr><td>Invalid Tow Deductions</td><td style="font-weight:700;">'+ws.towScore+'/5</td><td>10%</td></tr>';
+COMPETENCIES.forEach(c=>{
+const v=comp[c]||'-';
+html+='<tr><td>'+c+'</td><td style="font-weight:700;">'+v+'/5</td><td>5.71%</td></tr>';
+});
+html+='</table>';
+if(kpis.length>0){
+html+='<table><tr><th>KPI</th><th>Max</th><th>Actual</th><th>%</th></tr>';
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+const pct=kpi.max>0?Math.round(actual/kpi.max*100):0;
+html+='<tr><td>'+getKPIDisplayName(kpi,currentMonth)+'</td><td>$'+kpi.max.toFixed(2)+'</td><td>$'+actual.toFixed(2)+'</td><td style="font-weight:700;color:'+(pct>=100?'#2e7d32':pct>=70?'#f57f17':'#c62828')+';">'+pct+'%</td></tr>';
+});
+html+='</table>';
+}
+const esc=s=>(s||'').replace(/</g,'&lt;');
+if(pr.strengths||pr.development||pr.actionItems){
+html+='<div class="notes">';
+if(pr.strengths)html+='<strong>Key Strengths:</strong><p>'+esc(pr.strengths)+'</p>';
+if(pr.development)html+='<strong>Development Areas:</strong><p>'+esc(pr.development)+'</p>';
+if(pr.actionItems)html+='<strong>Action Items:</strong><p>'+esc(pr.actionItems)+'</p>';
+if(pr.nextReview)html+='<strong>Next Review:</strong><p>'+esc(pr.nextReview)+'</p>';
+html+='</div>';
+}
+html+='</div>';
+});
+html+='<div style="margin-top:20px;font-size:11px;color:#999;text-align:center;">Generated by YourSpot Rented KPI Bonus Tool — '+new Date().toLocaleString()+'</div>';
+html+='</body></html>';
+const win=window.open('','_blank');win.document.write(html);win.document.close();win.print();
+}
+
+function monthHasRealData(mk){
+const d=getMonthData(mk);
+if(d.individual){for(const p in d.individual){const pd=d.individual[p];for(const k in pd){const v=pd[k];if(v!==undefined&&v!==null&&v!==''&&v!==0){if(Array.isArray(v)){if(v.length>0)return true;}else return true;}}}}
+if(d.cc_team){for(const k in d.cc_team){if(d.cc_team[k])return true;}}
+if(d.admin_team){for(const k in d.admin_team){if(d.admin_team[k])return true;}}
+if(d.perfRatings){for(const p in d.perfRatings){const pr=d.perfRatings[p];if(pr&&(pr.manualRating||pr.competencies)){if(pr.manualRating)return true;if(pr.competencies){for(const c in pr.competencies){if(pr.competencies[c])return true;}}}}}
+if(d.tlRatings){for(const p in d.tlRatings){const tl=d.tlRatings[p];if(tl){for(const r in tl){const rd=tl[r];if(rd&&rd.competencies){for(const c in rd.competencies){if(rd.competencies[c])return true;}}}}}}
+return false;
+}
+let perfDashTab='cc';
+function renderPerfDashboard(){
+const ccList=CC_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const adminList=ADMIN_MEMBERS;
+const dualFiltered=DUAL_TEAM_MEMBERS.filter(p=>p!=='Kenan'&&p!=='Hazel');
+const ccMembers=[...ccList,...dualFiltered];
+const adminMembers=[...adminList,...dualFiltered];
+const members=perfDashTab==='cc'?ccMembers:adminMembers;
+const teamLabel=perfDashTab==='cc'?'CC Team':'Admin Team';
+let h='<div class="tabs">';
+h+='<div class="tab'+(perfDashTab==='cc'?' active':'')+'" onclick="perfDashTab=\'cc\';renderPerfDashboard()"><i class="fas fa-headset"></i> CC Team</div>';
+h+='<div class="tab'+(perfDashTab==='admin'?' active':'')+'" onclick="perfDashTab=\'admin\';renderPerfDashboard()"><i class="fas fa-cogs"></i> Admin Team</div>';
+h+='</div>';
+// Compute data for all months
+const monthsData=[];
+MONTHS.forEach(mo=>{
+const d=getMonthData(mo.key);
+if(!d.perfRatings)d.perfRatings={};
+let exceeds=0,meets=0,needs=0,below=0,totalWeighted=0,totalBonus=0,membersWithData=0;
+const memberDetails=[];
+members.forEach(person=>{
+const ws=calcWeightedPerfScore(mo.key,person);
+const autoInfo=getAutoRatingFromWeighted(ws.weighted);
+const finalBonus=getFinalBonus(mo.key,person);
+const pr=(d.perfRatings[person])||{};
+const effectiveRating=ws.noData&&!pr.manualRating?'—':pr.manualRating||autoInfo.rating;
+if(!ws.noData||pr.manualRating){
+if(effectiveRating.includes('Exceeds'))exceeds++;
+else if(effectiveRating.includes('Meets'))meets++;
+else if(effectiveRating.includes('Needs'))needs++;
+else if(effectiveRating.includes('Below'))below++;
+totalWeighted+=ws.weighted;
+membersWithData++;
+}
+totalBonus+=finalBonus;
+memberDetails.push({person,weightedScore:ws.weighted,kpiPct:ws.kpiPct,effectiveRating,finalBonus,autoRating:autoInfo.rating,manualOverride:!!pr.manualRating,noData:ws.noData});
+});
+const avgWeighted=membersWithData>0?Math.round(totalWeighted/membersWithData):0;
+const teamHasData=membersWithData>0;
+monthsData.push({key:mo.key,label:mo.label,exceeds,meets,needs,below,avgWeighted,totalBonus,memberDetails,hasData:monthHasRealData(mo.key),teamHasData});
+});
+// Team average trend overview
+h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-chart-line"></i> '+teamLabel+' — Team Average Trend</h3>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:15px;">';
+monthsData.forEach(md=>{
+if(!md.teamHasData)return;
+const topColor=md.avgWeighted>=90?'var(--success)':md.avgWeighted>=70?'var(--gold)':md.avgWeighted>=50?'var(--warning)':'var(--danger)';
+h+='<div style="background:var(--navy-dark);padding:10px;border-radius:8px;text-align:center;border-top:3px solid '+topColor+';">';
+h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">'+md.label.split(' ')[0]+'</div>';
+h+='<div style="font-size:22px;font-weight:700;color:'+topColor+';">'+md.avgWeighted+'%</div>';
+h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Avg Weighted</div>';
+h+='</div>';
+});
+h+='</div>';
+h+='</div>';
+// Individual rating trends with quarterly summaries
+const QUARTERS=[{label:'Q2',months:['2026-04','2026-05','2026-06']},{label:'Q3',months:['2026-07','2026-08','2026-09']},{label:'Q4',months:['2026-10','2026-11','2026-12']}];
+h+='<div class="form-section" style="margin-bottom:20px;"><h3 style="color:var(--gold);"><i class="fas fa-users"></i> '+teamLabel+' — Individual Rating Trends</h3>';
+h+='<div style="display:flex;flex-direction:column;gap:12px;">';
+members.forEach(person=>{
+const personMonths=[];
+monthsData.forEach(md=>{
+if(!md.teamHasData)return;
+const pm=md.memberDetails.find(m=>m.person===person);
+if(pm&&!pm.noData)personMonths.push({key:md.key,label:md.label.split(' ')[0],weighted:pm.weightedScore,rating:pm.effectiveRating,bonus:pm.finalBonus,kpiPct:pm.kpiPct});
+});
+if(personMonths.length===0)return;
+h+='<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;">';
+h+='<div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:8px;">'+person+'</div>';
+h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;">';
+// Monthly cards
+personMonths.forEach(pm=>{
+const c=pm.weighted>=90?'var(--success)':pm.weighted>=70?'var(--gold)':pm.weighted>=50?'var(--warning)':'var(--danger)';
+h+='<div style="background:var(--navy-dark);padding:8px 10px;border-radius:6px;text-align:center;border-top:2px solid '+c+';min-width:70px;flex:0 0 auto;">';
+h+='<div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">'+pm.label+'</div>';
+h+='<div style="font-size:18px;font-weight:700;color:'+c+';">'+pm.weighted.toFixed(1)+'%</div>';
+h+='<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">KPI:'+pm.kpiPct+'%</div>';
+h+='</div>';
+});
+// Quarterly summary cards
+QUARTERS.forEach(q=>{
+const qMonths=personMonths.filter(pm=>q.months.includes(pm.key));
+if(qMonths.length===0)return;
+const qAvg=Math.round(qMonths.reduce((s,m)=>s+m.weighted,0)/qMonths.length*10)/10;
+const qBonus=qMonths.reduce((s,m)=>s+m.bonus,0);
+const qColor=qAvg>=90?'var(--success)':qAvg>=70?'var(--gold)':qAvg>=50?'var(--warning)':'var(--danger)';
+h+='<div style="background:rgba(212,168,67,0.08);padding:8px 10px;border-radius:6px;text-align:center;border:1px solid rgba(212,168,67,0.2);min-width:80px;flex:0 0 auto;">';
+h+='<div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:2px;">'+q.label+'</div>';
+h+='<div style="font-size:18px;font-weight:700;color:'+qColor+';">'+qAvg+'%</div>';
+h+='<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">'+fmt(qBonus)+'</div>';
+h+='</div>';
+});
+h+='</div></div>';
+});
+h+='</div></div>';
+// Monthly detail cards
+monthsData.forEach(md=>{
+if(!md.teamHasData)return;
+h+='<div class="form-section" style="margin-bottom:20px;">';
+h+='<h3 style="display:flex;align-items:center;justify-content:space-between;"><span style="color:var(--gold);"><i class="fas fa-calendar-alt"></i> '+md.label+'</span>';
+h+='<span style="font-size:13px;color:var(--text-muted);">Avg Weighted: '+md.avgWeighted+'% | Total Bonus: '+fmt(md.totalBonus)+'</span></h3>';
+const total=md.exceeds+md.meets+md.needs+md.below;
+if(total>0){
+h+='<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">';
+h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--success);"></span><span style="font-size:12px;color:var(--text-muted);">Exceeds: <strong style="color:var(--success);">'+md.exceeds+'</strong></span></div>';
+h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--gold);"></span><span style="font-size:12px;color:var(--text-muted);">Meets: <strong style="color:var(--gold);">'+md.meets+'</strong></span></div>';
+h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--warning);"></span><span style="font-size:12px;color:var(--text-muted);">Needs Improvement: <strong style="color:var(--warning);">'+md.needs+'</strong></span></div>';
+h+='<div style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--danger);"></span><span style="font-size:12px;color:var(--text-muted);">Below: <strong style="color:var(--danger);">'+md.below+'</strong></span></div>';
+h+='</div>';
+const ePct=Math.round(md.exceeds/total*100);const mPct=Math.round(md.meets/total*100);const nPct=Math.round(md.needs/total*100);const bPct=100-ePct-mPct-nPct;
+h+='<div style="display:flex;height:20px;border-radius:10px;overflow:hidden;margin-bottom:12px;">';
+if(ePct>0)h+='<div style="width:'+ePct+'%;background:var(--success);" title="Exceeds '+md.exceeds+'"></div>';
+if(mPct>0)h+='<div style="width:'+mPct+'%;background:var(--gold);" title="Meets '+md.meets+'"></div>';
+if(nPct>0)h+='<div style="width:'+nPct+'%;background:var(--warning);" title="Needs Improvement '+md.needs+'"></div>';
+if(bPct>0)h+='<div style="width:'+bPct+'%;background:var(--danger);" title="Below '+md.below+'"></div>';
+h+='</div>';
+}
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">';
+md.memberDetails.forEach(m=>{
+if(m.noData&&!m.manualOverride)return;
+const rColor=m.effectiveRating.includes('Exceeds')?'var(--success)':m.effectiveRating.includes('Meets')?'var(--gold)':m.effectiveRating.includes('Needs')?'var(--warning)':'var(--danger)';
+const shortRating=m.effectiveRating.includes('Exceeds')?'Exceeds':m.effectiveRating.includes('Meets')?'Meets':m.effectiveRating.includes('Needs')?'Needs Imp.':'Below';
+h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;border-left:4px solid '+rColor+';">';
+h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+h+='<span style="font-weight:700;font-size:14px;color:var(--text);">'+m.person+'</span>';
+h+='<span style="font-size:11px;font-weight:600;color:'+rColor+';background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:10px;">'+shortRating+(m.manualOverride?' <i class="fas fa-pen" style="font-size:8px;"></i>':'')+'</span>';
+h+='</div>';
+h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
+h+='<div><span style="font-size:20px;font-weight:700;color:'+rColor+';">'+m.weightedScore.toFixed(1)+'%</span><span style="font-size:11px;color:var(--text-muted);margin-left:4px;">Weighted</span></div>';
+h+='<div style="text-align:right;"><span style="font-size:15px;font-weight:700;color:var(--gold);">'+fmt(m.finalBonus)+'</span><div style="font-size:10px;color:var(--text-muted);">Bonus</div></div>';
+h+='</div>';
+h+='<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">KPI: '+m.kpiPct+'%</div>';
+h+='<div style="margin-top:4px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">';
+h+='<div style="height:100%;width:'+Math.min(m.weightedScore,100)+'%;background:'+rColor+';border-radius:2px;"></div>';
+h+='</div>';
+h+='</div>';
+});
+h+='</div>';
+h+='</div>';
+});
+document.getElementById('content').innerHTML=h;
+}
+
+let coachingPerson=null;
+function renderCoaching(){
+if(!coachingPerson)coachingPerson=ALL_MEMBERS[0];
+const d=getMonthData(currentMonth);
+if(!d.coaching)d.coaching={};
+if(!d.coaching[coachingPerson])d.coaching[coachingPerson]={strengths:'',improvements:'',actionPlan:'',followUp:'',employeeComments:''};
+const c=d.coaching[coachingPerson];
+const kpis=getKPIsForPerson(coachingPerson);
+const pData=d.individual[coachingPerson]||{};
+let h='<div class="tabs">';
+ALL_MEMBERS.forEach(p=>{h+='<div class="tab'+(p===coachingPerson?' active':'')+'" onclick="switchCoachPerson(\''+p+'\')">'+p+'</div>';});
+h+='</div>';
+h+='<div class="form-section coaching-print"><h3><i class="fas fa-chalkboard-teacher"></i> Coaching Card - '+coachingPerson+' ('+MONTHS.find(m=>m.key===currentMonth).label+')</h3>';
+// Compute totals and categorize
+const team=getTeamForPerson(coachingPerson);
+const indivTotal=getIndividualTotal(currentMonth,coachingPerson);
+const maxTotal=kpis.reduce((s,k)=>s+k.max,0);
+const overallPct=maxTotal>0?Math.round(indivTotal/maxTotal*100):0;
+const finalBonus=getFinalBonus(currentMonth,coachingPerson);
+let teamShare=0;
+if(team==='dual'){const net=getCCTeamNet(currentMonth);const ccCnt=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;const tot=getAdminTeamNet(currentMonth);const adCnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=(net/ccCnt)+(tot/adCnt);}
+else if(team==='cc'){const net=getCCTeamNet(currentMonth);const cnt=d.ccMemberCount||CC_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=net/cnt;}
+else{const tot=getAdminTeamNet(currentMonth);const cnt=d.adminMemberCount||ADMIN_MEMBERS.length+DUAL_TEAM_MEMBERS.length;teamShare=tot/cnt;}
+const isTop=((team==='dual'&&(d.topPerformer.cc===coachingPerson||d.topPerformer.admin===coachingPerson))||(team==='cc'&&d.topPerformer.cc===coachingPerson)||(team==='admin'&&d.topPerformer.admin===coachingPerson))&&currentMonth>='2026-06';
+const isLow=(team==='dual'&&(d.lowPerformer.cc===coachingPerson||d.lowPerformer.admin===coachingPerson))||(team==='cc'&&d.lowPerformer.cc===coachingPerson)||(team==='admin'&&d.lowPerformer.admin===coachingPerson);
+const lowDed=getLowPerfDeduction(currentMonth,coachingPerson);
+const deductPct=Math.round(lowDed*100);
+const consecLow=getConsecutiveLow(coachingPerson,currentMonth);
+const sanction=getSanction(consecLow);
+const metKPIs=[];const belowKPIs=[];
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+if(actual>=kpi.max) metKPIs.push({...kpi,displayName:getKPIDisplayName(kpi,currentMonth)});
+else belowKPIs.push({kpi:{...kpi,displayName:getKPIDisplayName(kpi,currentMonth)},actual,gap:kpi.max-actual});
+});
+h+='<div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:15px;">';
+h+='<div class="stat-card" style="flex:1;min-width:150px;"><div class="stat-label">Individual KPI Total</div><div class="stat-value">'+fmt(indivTotal)+' / '+fmt(maxTotal)+'</div><div class="stat-sub">'+overallPct+'% achievement</div></div>';
+h+='<div class="stat-card'+(isTop?' green':isLow?' red':'')+'" style="flex:1;min-width:150px;"><div class="stat-label">Performance Status</div><div class="stat-value" style="font-size:1.1rem;color:'+(isTop?'var(--success)':isLow?'var(--danger)':'var(--navy)')+';">'+(isTop?'TOP PERFORMER':isLow?'LOW PERFORMER':'Standard')+'</div><div class="stat-sub">Final Bonus: '+fmt(finalBonus)+'</div></div>';
+h+='<div class="stat-card" style="flex:1;min-width:150px;"><div class="stat-label">Team Share</div><div class="stat-value">'+fmt(teamShare)+'</div><div class="stat-sub">'+(team==='dual'?'CC + Admin Teams':team==='cc'?'Customer Care':'Admin')+' Team'+(deductPct>0?' (-'+deductPct+'% deduction)':'')+'</div></div>';
+h+='<div class="stat-card'+(consecLow>=3?' red':consecLow>=1?' red':'')+'" style="flex:1;min-width:150px;"><div class="stat-label">Sanction Status</div><div class="stat-value" style="font-size:0.95rem;color:'+(consecLow>=3?'var(--danger)':consecLow>=1?'var(--warning)':'var(--success)')+';">'+sanction+'</div><div class="stat-sub">'+consecLow+' consecutive low month'+(consecLow!==1?'s':'')+'</div></div>';
+h+='</div>';
+h+='<h4 style="color:var(--gold);margin:15px 0 10px;">KPI Gap Analysis</h4>';
+h+='<table><thead><tr><th>KPI</th><th>Max</th><th>Actual</th><th>Gap</th><th>%</th><th>Attainment Notes</th></tr></thead><tbody>';
+kpis.forEach(kpi=>{
+const actual=parseFloat(pData[kpi.id])||0;
+const gap=kpi.max-actual;
+const pct=kpi.max>0?Math.round(actual/kpi.max*100):0;
+const desc=(pData[kpi.id+'_desc']||'').replace(/</g,'&lt;');
+const displayName=getKPIDisplayName(kpi,currentMonth);
+const statusIcon=actual>=kpi.max?'<i class="fas fa-check-circle" style="color:var(--success);"></i>':actual>0?'<i class="fas fa-exclamation-circle" style="color:var(--warning);"></i>':'<i class="fas fa-times-circle" style="color:var(--danger);"></i>';
+h+='<tr><td>'+statusIcon+' '+displayName+'</td><td>'+fmt(kpi.max)+'</td><td>'+fmt(actual)+'</td><td style="color:'+(gap>0?'var(--danger)':'var(--success)')+';">'+(gap>0?'-':'')+fmt(Math.abs(gap))+'</td><td style="font-weight:700;color:'+(pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)')+';">'+pct+'%</td><td style="font-size:12px;color:var(--text-muted);">'+desc+'</td></tr>';
+});
+const totalPct=maxTotal>0?Math.round(indivTotal/maxTotal*100):0;
+h+='<tr style="background:var(--navy);color:#fff;font-weight:700;"><td>TOTAL</td><td>'+fmt(maxTotal)+'</td><td>'+fmt(indivTotal)+'</td><td>'+(indivTotal<maxTotal?'-':'')+fmt(Math.abs(maxTotal-indivTotal))+'</td><td>'+totalPct+'%</td><td></td></tr>';
+h+='</tbody></table>';
+// Auto-generated insights
+const autoStrengths=metKPIs.length>0?metKPIs.map(k=>k.displayName).join(', '):'No KPIs at maximum this period';
+const autoImprovements=belowKPIs.length>0?belowKPIs.sort((a,b)=>b.gap-a.gap).map(b=>b.kpi.displayName+' (gap: '+fmt(b.gap)+')').join(', '):'All KPIs met or exceeded';
+h+='<div style="background:rgba(212,168,67,0.08);border-left:3px solid var(--gold);padding:12px 15px;margin:15px 0;border-radius:0 6px 6px 0;font-size:13px;">';
+h+='<strong style="color:var(--gold);"><i class="fas fa-lightbulb"></i> Auto-Generated Insights</strong><br>';
+h+='<span style="color:var(--success);font-weight:600;">Strengths:</span> '+autoStrengths+'<br>';
+h+='<span style="color:var(--danger);font-weight:600;">Focus Areas:</span> '+autoImprovements;
+h+='</div>';
+// Competency Ratings & Weighted Score in Coaching Card
+const cws=calcWeightedPerfScore(currentMonth,coachingPerson);
+const cAutoInfo=getAutoRatingFromWeighted(cws.weighted);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[coachingPerson])d.perfRatings[coachingPerson]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[coachingPerson].competencies)d.perfRatings[coachingPerson].competencies={};
+const cComp=d.perfRatings[coachingPerson].competencies;
+h+='<div style="margin:20px 0 15px;"><h4 style="color:var(--gold);margin-bottom:10px;"><i class="fas fa-clipboard-check"></i> Competency Ratings & Weighted Performance</h4>';
+h+='<div style="background:var(--navy-dark);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;">';
+if(cws.noData){
+h+='<div style="text-align:center;width:100%;"><div style="font-size:12px;color:var(--text-muted);"><i class="fas fa-info-circle"></i> No data entered yet for this month.</div></div>';
+}else{
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Weighted Score</div><div style="font-size:22px;font-weight:700;color:'+cAutoInfo.color+';">'+cws.weighted.toFixed(1)+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">KPI (50%)</div><div style="font-size:18px;font-weight:700;color:var(--gold);">'+cws.kpiPct+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Tow (10%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.towScore+'/5</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Comp Avg (40%)</div><div style="font-size:18px;font-weight:700;color:var(--text);">'+cws.compAvg+'%</div></div>';
+h+='<div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Auto Rating</div><div style="font-size:14px;font-weight:700;color:'+cAutoInfo.color+';">'+cAutoInfo.rating+'</div></div>';
+}
+h+='</div>';
+h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;">';
+COMPETENCIES.forEach(comp=>{
+const cVal=cComp[comp]||'';
+h+='<div style="display:flex;align-items:center;gap:8px;background:var(--navy-dark);padding:8px 12px;border-radius:6px;">';
+h+='<label style="flex:1;font-size:13px;color:var(--text);min-width:180px;">'+comp+'</label>';
+h+='<select style="width:80px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:4px;font-size:13px;" onchange="updateCoachingCompetency(\''+comp+'\',this.value)">';
+h+='<option value=""'+(cVal===''?' selected':'')+'>—</option>';
+for(let i=1;i<=5;i++){h+='<option value="'+i+'"'+(cVal==i?' selected':'')+'>'+i+' - '+COMP_LABELS[i]+'</option>';}
+h+='</select>';
+if(cVal){const cvColor=cVal>=4?'var(--success)':cVal>=3?'var(--gold)':cVal>=2?'var(--warning)':'var(--danger)';h+='<span style="font-size:11px;font-weight:700;color:'+cvColor+';min-width:20px;">'+cVal+'/5</span>';}
+h+='</div>';
+});
+h+='</div></div>';
+h+='<div class="coaching-section" style="margin-top:20px;"><label>Strengths (Editable)</label><textarea onchange="updateCoaching(\'strengths\',this.value)">'+((c.strengths||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Areas for Improvement (Editable)</label><textarea onchange="updateCoaching(\'improvements\',this.value)">'+((c.improvements||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Action Plan</label><textarea onchange="updateCoaching(\'actionPlan\',this.value)">'+((c.actionPlan||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Follow-Up Date / Notes</label><textarea onchange="updateCoaching(\'followUp\',this.value)">'+((c.followUp||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='<div class="coaching-section"><label>Employee Comments</label><textarea onchange="updateCoaching(\'employeeComments\',this.value)">'+((c.employeeComments||'').replace(/</g,'&lt;'))+'</textarea></div>';
+h+='</div>';
+h+='<div class="btn-row"><button class="btn btn-gold" onclick="saveCoaching()"><i class="fas fa-save"></i> Save</button><button class="btn btn-info" onclick="window.print()"><i class="fas fa-print"></i> Print</button></div>';
+document.getElementById('content').innerHTML=h;
+}
+
+function switchCoachPerson(p){coachingPerson=p;renderCoaching();}
+function updateCoachingCompetency(comp,val){
+const d=getMonthData(currentMonth);
+if(!d.perfRatings)d.perfRatings={};
+if(!d.perfRatings[coachingPerson])d.perfRatings[coachingPerson]={manualRating:'',coachingNotes:'',actionItems:'',strengths:'',development:'',nextReview:'',competencies:{}};
+if(!d.perfRatings[coachingPerson].competencies)d.perfRatings[coachingPerson].competencies={};
+d.perfRatings[coachingPerson].competencies[comp]=val?parseInt(val):'';
+}
+function updateCoaching(field,val){
+const d=getMonthData(currentMonth);
+if(!d.coaching)d.coaching={};
+if(!d.coaching[coachingPerson])d.coaching[coachingPerson]={strengths:'',improvements:'',actionPlan:'',followUp:'',employeeComments:''};
+d.coaching[coachingPerson][field]=val;
+}
+function saveCoaching(){saveData();toast('Coaching card saved');}
+
+// ===== PIP TRACKING =====
+function getPIPData(){if(!data._pip)data._pip=[];return data._pip;}
+
+function getAutoFlags(){
+const flags=[];
+ALL_MEMBERS.forEach(p=>{
+const consec=getConsecutiveLow(p,currentMonth);
+if(consec>=3){
+const existing=getPIPData().find(pip=>pip.person===p&&pip.status!=='Completed'&&pip.status!=='Removed');
+if(!existing)flags.push({person:p,consecutiveLow:consec,team:getTeamForPerson(p)});
+}
+});
+return flags;
+}
+
+function enrollPIP(person,reason,startDate,endDate){
+const pips=getPIPData();
+pips.push({id:Date.now(),person:person,reason:reason,startDate:startDate||currentMonth,endDate:endDate||'',status:'Active',goals:[],progressNotes:[],enrolledMonth:currentMonth,auto:false});
+data._pip=pips;saveData();renderPIP();toast(person+' enrolled in PIP');
+}
+
+function autoEnrollPIP(person){
+const pips=getPIPData();
+const consec=getConsecutiveLow(person,currentMonth);
+pips.push({id:Date.now(),person:person,reason:'Auto-triggered: '+consec+' consecutive low performer months',startDate:currentMonth,endDate:'',status:'Active',goals:[],progressNotes:[],enrolledMonth:currentMonth,auto:true});
+data._pip=pips;saveData();renderPIP();toast(person+' auto-enrolled in PIP');
+}
+
+function updatePIPStatus(id,status){
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.status=status;if(status==='Completed'||status==='Removed')pip.closedMonth=currentMonth;saveData();renderPIP();toast('PIP status updated');}
+}
+
+function addPIPGoal(id){
+const desc=document.getElementById('pipGoal_'+id).value.trim();
+const target=document.getElementById('pipTarget_'+id).value.trim();
+if(!desc){toast('Enter a goal description');return;}
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.goals.push({description:desc,target:target,met:false});saveData();renderPIP();toast('Goal added');}
+}
+
+function toggleGoal(pipId,goalIdx){
+const pip=getPIPData().find(p=>p.id===pipId);
+if(pip&&pip.goals[goalIdx]){pip.goals[goalIdx].met=!pip.goals[goalIdx].met;saveData();renderPIP();}
+}
+
+function removePIPGoal(pipId,goalIdx){
+const pip=getPIPData().find(p=>p.id===pipId);
+if(pip){pip.goals.splice(goalIdx,1);saveData();renderPIP();toast('Goal removed');}
+}
+
+function addPIPNote(id){
+const note=document.getElementById('pipNote_'+id).value.trim();
+if(!note){toast('Enter a note');return;}
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip.progressNotes.push({date:new Date().toLocaleDateString(),month:currentMonth,note:note});saveData();renderPIP();toast('Note added');}
+}
+
+function updatePIPField(id,field,val){
+const pip=getPIPData().find(p=>p.id===id);
+if(pip){pip[field]=val;saveData();}
+}
+
+function removePIP(id){
+const pips=getPIPData();
+const idx=pips.findIndex(p=>p.id===id);
+if(idx>=0){pips.splice(idx,1);data._pip=pips;saveData();renderPIP();toast('PIP record removed');}
+}
+
+function renderPIP(){
+const pips=getPIPData();
+const autoFlags=getAutoFlags();
+const activePIPs=pips.filter(p=>p.status==='Active');
+const completedPIPs=pips.filter(p=>p.status==='Completed'||p.status==='Removed');
+let h='';
+
+// Auto-detection alerts
+if(autoFlags.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--danger);">';
+h+='<h3 style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Auto-Detected PIP Candidates</h3>';
+h+='<p style="color:var(--text-muted);font-size:13px;margin-bottom:15px;">These employees have 3+ consecutive low performer months starting June 2026 and are not currently enrolled in PIP.</p>';
+autoFlags.forEach(f=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;margin-bottom:8px;">';
+h+='<div style="flex:1;"><strong style="color:var(--text);">'+f.person+'</strong> <span style="color:var(--text-muted);font-size:12px;">('+( f.team==='cc'?'Customer Care':'Admin')+')</span>';
+h+='<div style="color:var(--danger);font-size:13px;margin-top:2px;">'+f.consecutiveLow+' consecutive low performer months</div></div>';
+h+='<button class="btn btn-danger btn-sm" onclick="autoEnrollPIP(\''+f.person+'\')"><i class="fas fa-user-plus"></i> Enroll in PIP</button>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Stats
+h+='<div class="stats-grid">';
+h+='<div class="stat-card"><div class="label">Active PIPs</div><div class="value" style="color:var(--danger);">'+activePIPs.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Completed/Removed</div><div class="value" style="color:var(--success);">'+completedPIPs.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Auto-Flagged</div><div class="value" style="color:var(--warning);">'+autoFlags.length+'</div></div>';
+h+='</div>';
+
+// Manual enrollment form
+h+='<div class="form-section"><h3><i class="fas fa-user-plus"></i> Manual PIP Enrollment</h3>';
+h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Employee</label>';
+h+='<select id="pipPerson" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;width:150px;">';
+ALL_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+h+='</select></div>';
+h+='<div style="flex:1;min-width:200px;"><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Reason</label>';
+h+='<input id="pipReason" placeholder="Reason for PIP enrollment" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Start Month</label>';
+h+='<select id="pipStart" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;">';
+MONTHS.forEach(m=>{h+='<option value="'+m.key+'"'+(m.key===currentMonth?' selected':'')+'>'+m.label+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">End Month</label>';
+h+='<select id="pipEnd" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"><option value="">TBD</option>';
+MONTHS.forEach(m=>{h+='<option value="'+m.key+'">'+m.label+'</option>';});
+h+='</select></div>';
+h+='<button class="btn btn-danger" onclick="enrollPIP(document.getElementById(\'pipPerson\').value,document.getElementById(\'pipReason\').value,document.getElementById(\'pipStart\').value,document.getElementById(\'pipEnd\').value)"><i class="fas fa-user-plus"></i> Enroll</button>';
+h+='</div></div>';
+
+// Active PIPs
+if(activePIPs.length>0){
+h+='<div class="form-section"><h3 style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Active PIPs ('+activePIPs.length+')</h3>';
+activePIPs.forEach(pip=>{
+const goalsMet=pip.goals.filter(g=>g.met).length;
+const goalsTotal=pip.goals.length;
+const pct=goalsTotal>0?Math.round(goalsMet/goalsTotal*100):0;
+h+='<div style="background:var(--navy-dark);border-radius:10px;padding:20px;margin-bottom:15px;border-left:4px solid var(--danger);">';
+// Header
+h+='<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;margin-bottom:15px;">';
+h+='<div><h4 style="color:var(--text);margin:0;">'+pip.person+'</h4>';
+h+='<div style="color:var(--text-muted);font-size:12px;margin-top:3px;">'+pip.reason+'</div>';
+h+='<div style="font-size:12px;margin-top:5px;"><span style="color:var(--gold);">Start:</span> '+(MONTHS.find(m=>m.key===pip.startDate)||{label:pip.startDate}).label+' &nbsp; <span style="color:var(--gold);">End:</span> '+(pip.endDate?(MONTHS.find(m=>m.key===pip.endDate)||{label:pip.endDate}).label:'TBD');
+if(pip.auto)h+=' &nbsp; <span style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;">AUTO</span>';
+h+='</div></div>';
+h+='<div style="display:flex;gap:8px;">';
+h+='<select onchange="updatePIPStatus('+pip.id+',this.value)" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;">';
+['Active','Completed','Removed'].forEach(s=>{h+='<option value="'+s+'"'+(pip.status===s?' selected':'')+'>'+s+'</option>';});
+h+='</select>';
+h+='<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Remove this PIP record entirely?\'))removePIP('+pip.id+')"><i class="fas fa-trash"></i></button>';
+h+='</div></div>';
+// Progress bar
+if(goalsTotal>0){
+h+='<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;"><span>Goal Progress</span><span>'+goalsMet+'/'+goalsTotal+' ('+pct+'%)</span></div>';
+h+='<div style="background:var(--navy);border-radius:4px;height:8px;overflow:hidden;"><div style="background:'+(pct>=100?'var(--success)':pct>=50?'var(--warning)':'var(--danger)')+';height:100%;width:'+pct+'%;border-radius:4px;transition:width .3s;"></div></div></div>';
+}
+// Goals
+h+='<div style="margin-bottom:12px;"><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-bullseye"></i> Improvement Goals</strong>';
+if(pip.goals.length>0){
+h+='<table style="margin-top:8px;"><thead><tr><th style="width:30px;"></th><th>Goal</th><th>Target</th><th style="width:60px;">Status</th><th style="width:40px;"></th></tr></thead><tbody>';
+pip.goals.forEach((g,gi)=>{
+h+='<tr style="'+(g.met?'opacity:0.6;':'')+'"><td><input type="checkbox" '+(g.met?'checked':'')+' onchange="toggleGoal('+pip.id+','+gi+')" style="cursor:pointer;"></td>';
+h+='<td style="'+(g.met?'text-decoration:line-through;':'')+'">'+g.description.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;color:var(--text-muted);">'+g.target.replace(/</g,'&lt;')+'</td>';
+h+='<td><span class="badge '+(g.met?'badge-top':'badge-low')+'">'+(g.met?'MET':'PENDING')+'</span></td>';
+h+='<td><button class="btn" style="padding:2px 6px;font-size:10px;background:var(--danger);color:#fff;" onclick="removePIPGoal('+pip.id+','+gi+')"><i class="fas fa-times"></i></button></td></tr>';
+});
+h+='</tbody></table>';
+}
+h+='<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">';
+h+='<input id="pipGoal_'+pip.id+'" placeholder="Goal description" style="flex:2;min-width:180px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<input id="pipTarget_'+pip.id+'" placeholder="Target/metric" style="flex:1;min-width:120px;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="addPIPGoal('+pip.id+')"><i class="fas fa-plus"></i> Add Goal</button>';
+h+='</div></div>';
+// Progress Notes
+h+='<div><strong style="color:var(--gold);font-size:13px;"><i class="fas fa-sticky-note"></i> Progress Notes</strong>';
+if(pip.progressNotes.length>0){
+pip.progressNotes.forEach(n=>{
+h+='<div style="padding:8px 12px;background:var(--navy);border-radius:6px;margin-top:6px;font-size:13px;"><span style="color:var(--gold);font-weight:600;">'+n.date+'</span> <span style="color:var(--text-muted);font-size:11px;">('+((MONTHS.find(m=>m.key===n.month)||{label:n.month}).label)+')</span><div style="margin-top:4px;">'+n.note.replace(/</g,'&lt;')+'</div></div>';
+});
+}
+h+='<div style="display:flex;gap:8px;margin-top:8px;">';
+h+='<input id="pipNote_'+pip.id+'" placeholder="Add progress note..." style="flex:1;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;">';
+h+='<button class="btn btn-info btn-sm" onclick="addPIPNote('+pip.id+')"><i class="fas fa-plus"></i> Add Note</button>';
+h+='</div></div>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Completed/Removed PIPs
+if(completedPIPs.length>0){
+h+='<div class="form-section"><h3 style="color:var(--success);"><i class="fas fa-check-circle"></i> Completed / Removed PIPs ('+completedPIPs.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Reason</th><th>Period</th><th>Goals Met</th><th>Status</th><th></th></tr></thead><tbody>';
+completedPIPs.forEach(pip=>{
+const goalsMet=pip.goals.filter(g=>g.met).length;
+const goalsTotal=pip.goals.length;
+h+='<tr>';
+h+='<td>'+pip.person+'</td>';
+h+='<td style="font-size:12px;">'+pip.reason.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;">'+(MONTHS.find(m=>m.key===pip.startDate)||{label:pip.startDate}).label+' - '+(pip.closedMonth?(MONTHS.find(m=>m.key===pip.closedMonth)||{label:pip.closedMonth}).label:'')+'</td>';
+h+='<td>'+goalsMet+'/'+goalsTotal+'</td>';
+h+='<td><span class="badge '+(pip.status==='Completed'?'badge-top':'badge-low')+'">'+pip.status.toUpperCase()+'</span></td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete this record?\'))removePIP('+pip.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+if(pips.length===0&&autoFlags.length===0){
+h+='<div class="form-section" style="text-align:center;padding:40px;"><i class="fas fa-check-circle" style="font-size:48px;color:var(--success);margin-bottom:15px;display:block;"></i>';
+h+='<h3 style="color:var(--success);">No Active PIPs</h3>';
+h+='<p style="color:var(--text-muted);">No employees are currently on a Performance Improvement Plan and no auto-flags detected.</p></div>';
+}
+
+document.getElementById('content').innerHTML=h;
+}
+
+// ===== COACHING SCHEDULE =====
+function getScheduleData(){if(!data._coachingSched)data._coachingSched=[];return data._coachingSched;}
+
+function addSession(){
+const emp=document.getElementById('schedEmp').value;
+const date=document.getElementById('schedDate').value;
+const topic=document.getElementById('schedTopic').value.trim();
+const followUp=document.getElementById('schedFollowUp').value;
+if(!date||!topic){toast('Date and topic are required');return;}
+const sched=getScheduleData();
+sched.push({id:Date.now(),employee:emp,date:date,topic:topic,notes:'',followUpDate:followUp,status:'Scheduled',createdMonth:currentMonth});
+data._coachingSched=sched;saveData();renderSchedule();toast('Session scheduled for '+emp);
+}
+
+function updateSessionStatus(id,status){
+const s=getScheduleData().find(x=>x.id===id);
+if(s){s.status=status;saveData();renderSchedule();}
+}
+
+function saveSessionNotes(id){
+const s=getScheduleData().find(x=>x.id===id);
+const notes=document.getElementById('schedNotes_'+id).value;
+if(s){s.notes=notes;saveData();toast('Notes saved');}
+}
+
+function updateSessionField(id,field,val){
+const s=getScheduleData().find(x=>x.id===id);
+if(s){s[field]=val;saveData();}
+}
+
+function deleteSession(id){
+const sched=getScheduleData();
+const idx=sched.findIndex(x=>x.id===id);
+if(idx>=0){sched.splice(idx,1);data._coachingSched=sched;saveData();renderSchedule();toast('Session removed');}
+}
+
+function formatSchedDate(d){
+if(!d)return'-';
+const dt=new Date(d+'T00:00:00');
+return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',weekday:'short',timeZone:'America/Chicago'});
+}
+
+function renderSchedule(){
+const sched=getScheduleData();
+const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+const upcoming=sched.filter(s=>s.status==='Scheduled'&&s.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
+const overdue=sched.filter(s=>s.status==='Scheduled'&&s.date<today).sort((a,b)=>a.date.localeCompare(b.date));
+const completed=sched.filter(s=>s.status==='Completed').sort((a,b)=>b.date.localeCompare(a.date));
+const cancelled=sched.filter(s=>s.status==='Cancelled').sort((a,b)=>b.date.localeCompare(a.date));
+const followUps=sched.filter(s=>s.status==='Completed'&&s.followUpDate&&s.followUpDate>=today).sort((a,b)=>a.followUpDate.localeCompare(b.followUpDate));
+let h='';
+
+// Stats
+h+='<div class="stats-grid">';
+h+='<div class="stat-card"><div class="label">Upcoming</div><div class="value" style="color:var(--gold);">'+upcoming.length+'</div></div>';
+h+='<div class="stat-card'+(overdue.length>0?' red':'')+'"><div class="label">Overdue</div><div class="value" style="color:'+(overdue.length>0?'var(--danger)':'var(--success)')+';">'+overdue.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Completed</div><div class="value" style="color:var(--success);">'+completed.length+'</div></div>';
+h+='<div class="stat-card"><div class="label">Follow-Ups Due</div><div class="value" style="color:var(--warning);">'+followUps.length+'</div></div>';
+h+='</div>';
+
+// Add new session form
+h+='<div class="form-section"><h3><i class="fas fa-plus-circle"></i> Schedule Coaching Session</h3>';
+h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Employee</label>';
+h+='<select id="schedEmp" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;width:150px;">';
+ALL_MEMBERS.forEach(p=>{h+='<option value="'+p+'">'+p+'</option>';});
+h+='</select></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Date</label>';
+h+='<input type="date" id="schedDate" value="'+today+'" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"></div>';
+h+='<div style="flex:1;min-width:180px;"><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Topic</label>';
+h+='<input id="schedTopic" placeholder="Coaching topic / agenda" style="width:100%;background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;"></div>';
+h+='<div><label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Follow-Up Date</label>';
+h+='<input type="date" id="schedFollowUp" style="background:var(--navy-light);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;"></div>';
+h+='<button class="btn btn-gold" onclick="addSession()"><i class="fas fa-calendar-plus"></i> Schedule</button>';
+h+='</div></div>';
+
+// Overdue alert
+if(overdue.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--danger);">';
+h+='<h3 style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> Overdue Sessions ('+overdue.length+')</h3>';
+overdue.forEach(s=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;margin-bottom:8px;flex-wrap:wrap;">';
+h+='<div style="min-width:90px;"><strong style="color:var(--text);">'+s.employee+'</strong></div>';
+h+='<div style="color:var(--danger);font-size:13px;min-width:140px;"><i class="fas fa-calendar-times"></i> '+formatSchedDate(s.date)+'</div>';
+h+='<div style="flex:1;color:var(--text-muted);font-size:13px;">'+s.topic.replace(/</g,'&lt;')+'</div>';
+h+='<div style="display:flex;gap:6px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="updateSessionStatus('+s.id+',\'Completed\')"><i class="fas fa-check"></i> Done</button>';
+h+='<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="updateSessionStatus('+s.id+',\'Cancelled\')"><i class="fas fa-times"></i></button>';
+h+='</div></div>';
+});
+h+='</div>';
+}
+
+// Follow-ups due
+if(followUps.length>0){
+h+='<div class="form-section" style="border-left:3px solid var(--warning);">';
+h+='<h3 style="color:var(--warning);"><i class="fas fa-bell"></i> Follow-Ups Due ('+followUps.length+')</h3>';
+followUps.forEach(s=>{
+h+='<div style="display:flex;align-items:center;gap:15px;padding:10px;background:rgba(243,156,18,0.08);border-radius:8px;margin-bottom:6px;">';
+h+='<div style="min-width:90px;"><strong style="color:var(--text);">'+s.employee+'</strong></div>';
+h+='<div style="color:var(--warning);font-size:13px;min-width:140px;"><i class="fas fa-calendar-check"></i> '+formatSchedDate(s.followUpDate)+'</div>';
+h+='<div style="flex:1;color:var(--text-muted);font-size:13px;">Re: '+s.topic.replace(/</g,'&lt;')+'</div>';
+h+='</div>';
+});
+h+='</div>';
+}
+
+// Upcoming sessions
+h+='<div class="form-section"><h3 style="color:var(--gold);"><i class="fas fa-calendar"></i> Upcoming Sessions ('+upcoming.length+')</h3>';
+if(upcoming.length>0){
+upcoming.forEach(s=>{
+h+='<div style="background:var(--navy-dark);border-radius:10px;padding:16px;margin-bottom:10px;border-left:4px solid var(--gold);">';
+h+='<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;">';
+h+='<div><strong style="color:var(--text);font-size:15px;">'+s.employee+'</strong>';
+h+='<div style="color:var(--gold);font-size:13px;margin-top:3px;"><i class="fas fa-calendar"></i> '+formatSchedDate(s.date);
+if(s.followUpDate)h+=' &nbsp; <i class="fas fa-redo"></i> Follow-up: '+formatSchedDate(s.followUpDate);
+h+='</div>';
+h+='<div style="color:var(--text-muted);font-size:13px;margin-top:5px;"><i class="fas fa-comment-dots"></i> '+s.topic.replace(/</g,'&lt;')+'</div></div>';
+h+='<div style="display:flex;gap:6px;">';
+h+='<button class="btn btn-gold btn-sm" onclick="updateSessionStatus('+s.id+',\'Completed\')"><i class="fas fa-check"></i> Complete</button>';
+h+='<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="if(confirm(\'Cancel this session?\'))updateSessionStatus('+s.id+',\'Cancelled\')"><i class="fas fa-times"></i></button>';
+h+='<button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button>';
+h+='</div></div>';
+// Notes area
+h+='<div style="margin-top:10px;"><textarea id="schedNotes_'+s.id+'" placeholder="Pre-session notes or agenda items..." style="width:100%;min-height:50px;background:var(--navy);color:var(--text);border:1px solid var(--border);padding:8px;border-radius:6px;font-size:13px;resize:vertical;">'+((s.notes||'').replace(/</g,'&lt;'))+'</textarea>';
+h+='<button class="btn btn-info btn-sm" style="margin-top:5px;" onclick="saveSessionNotes('+s.id+')"><i class="fas fa-save"></i> Save Notes</button></div>';
+h+='</div>';
+});
+}else{
+h+='<p style="color:var(--text-muted);text-align:center;padding:20px;">No upcoming sessions scheduled.</p>';
+}
+h+='</div>';
+
+// Completed sessions
+if(completed.length>0){
+h+='<div class="form-section"><h3 style="color:var(--success);"><i class="fas fa-check-circle"></i> Completed Sessions ('+completed.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Date</th><th>Topic</th><th>Notes</th><th>Follow-Up</th><th></th></tr></thead><tbody>';
+completed.forEach(s=>{
+h+='<tr>';
+h+='<td>'+s.employee+'</td>';
+h+='<td style="font-size:12px;white-space:nowrap;">'+formatSchedDate(s.date)+'</td>';
+h+='<td style="font-size:12px;">'+s.topic.replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+(s.notes||'-').replace(/</g,'&lt;')+'</td>';
+h+='<td style="font-size:12px;">'+(s.followUpDate?formatSchedDate(s.followUpDate):'-')+'</td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+// Cancelled
+if(cancelled.length>0){
+h+='<div class="form-section"><h3 style="color:var(--text-muted);"><i class="fas fa-ban"></i> Cancelled ('+cancelled.length+')</h3>';
+h+='<table><thead><tr><th>Employee</th><th>Date</th><th>Topic</th><th></th></tr></thead><tbody>';
+cancelled.forEach(s=>{
+h+='<tr style="opacity:0.6;">';
+h+='<td>'+s.employee+'</td>';
+h+='<td style="font-size:12px;">'+formatSchedDate(s.date)+'</td>';
+h+='<td style="font-size:12px;">'+s.topic.replace(/</g,'&lt;')+'</td>';
+h+='<td><button class="btn btn-danger btn-sm" onclick="if(confirm(\'Delete?\'))deleteSession('+s.id+')"><i class="fas fa-trash"></i></button></td>';
+h+='</tr>';
+});
+h+='</tbody></table></div>';
+}
+
+if(sched.length===0){
+h+='<div class="form-section" style="text-align:center;padding:40px;"><i class="fas fa-calendar-check" style="font-size:48px;color:var(--gold);margin-bottom:15px;display:block;"></i>';
+h+='<h3 style="color:var(--gold);">No Sessions Yet</h3>';
+h+='<p style="color:var(--text-muted);">Schedule your first coaching session using the form above.</p></div>';
+}
+
+document.getElementById('content').innerHTML=h;
+}
+
+const SEED_DATA={"2026-04":{cc_team:{tow:31,parkpliant:0,lotfull:'',towincident:19,frt:5,listing_issue:24,tracking_sheet:4,avg_response_team:5,resolution_rate_team:99.9},admin_team:{endorsements:95,daily_task:95,inventory:15,new_listing:95,revision:'',facility_audit:'',facility_action:0,tow_assign:5,parkpliant_admin:0,split_revenue:60},ccTeamGrossOverride:610,ccTeamNetOverride:488,ccMemberCount:7,adminTeamTotalOverride:290,adminMemberCount:5,individual:{Gwen:{cc_report:5,cc_report_desc:'Submitted on time',coaching:7.50,coaching_desc:'Coaching sessions completed',tow_coord:10,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues resolved',avg_response:4,avg_response_desc:'Avg response time met',resolution_rate:5,resolution_rate_desc:'99.90% resolution',tow_invest:7.50,tow_invest_desc:'Investigations completed'},Donita:{tow_coord:10,tow_coord_desc:'Towing coordination',listing_res:15,listing_res_desc:'Listing issues resolved',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations completed'},Michael:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:0,tow_invest_desc:'No investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Angel:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:0,listing_res_desc:'No listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:0,tow_invest_desc:'No investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Christine:{tow_coord:5,tow_coord_desc:'Towing coordination',listing_res:7.50,listing_res_desc:'Listing issues',avg_response:6,avg_response_desc:'Response time',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:5,tow_invest_desc:'Investigations'},Hazel:{h_resolution:10,h_resolution_desc:'25.38% refund reduction (Mar $3,010.58 to Apr $2,246.46)',h_team_perf:5,h_team_perf_desc:'Team KPI rate: 75%',h_coaching_imp:15,h_coaching_imp_desc:'8 sessions: Angel-3, Michael-2, CJ-1, Jian-1, Joan-1',h_process_imp:15,h_process_imp_desc:'Facility Data Lookup, Reinforcement Lookup, Monthly Booking Lookup'},Joan:{a_report:5,a_report_desc:'Report submitted',a_coaching:7.50,a_coaching_desc:'Coaching done',a_weekly:5,a_weekly_desc:'Weekly tasks',a_inventory:5,a_inventory_desc:'Inventory mgmt',a_listing:7.50,a_listing_desc:'Listing mgmt',a_facility_audit:0,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'},Lovely:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:10,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:10,a_facility_action_desc:'Audit actions',a_tow_assign:10,a_tow_assign_desc:'Towing assignment'},Jian:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:8,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'}},deductions:[{description:'PW Customer ID 800350593, 358 Chestnut Hill Ave - Invalid tow reimbursement $178.87',amount:178.87,person:'Angel'},{description:'PW Customer ID 799281928, 81 Huron Ave - Invalid tow reimbursement $200',amount:200,person:'Donita'}],coaching:{},topPerformer:{cc:'Gwen',admin:'Lovely'},lowPerformer:{cc:'Angel',admin:'Jian'}},"2026-05":{cc_team:{tow:9,parkpliant:1,lotfull:'',towincident:22,frt:0,listing_issue:20,tracking_sheet:4,avg_response_team:0,resolution_rate_team:99.8},admin_team:{endorsements:95,daily_task:95,inventory:30,new_listing:95,revision:'',facility_audit:90,facility_action:44,tow_assign:5,parkpliant_admin:4,split_revenue:60},ccTeamGrossOverride:412,ccTeamNetOverride:370.80,ccMemberCount:7,adminTeamTotalOverride:467,adminMemberCount:5,individual:{Gwen:{cc_report:5,cc_report_desc:'Report submitted',coaching:7.50,coaching_desc:'Coaching sessions',tow_coord:0,tow_coord_desc:'No towing coordination',listing_res:10,listing_res_desc:'Listing issues resolved',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:5,resolution_rate_desc:'Resolution rate met',tow_invest:7.50,tow_invest_desc:'Investigations completed'},Donita:{tow_coord:2,tow_coord_desc:'Towing coordination',listing_res:7.50,listing_res_desc:'Listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations completed'},Michael:{tow_coord:3.75,tow_coord_desc:'Towing coordination',listing_res:10,listing_res_desc:'Listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Angel:{tow_coord:6,tow_coord_desc:'Towing coordination',listing_res:0,listing_res_desc:'No listing issues',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:5,tow_invest_desc:'Investigations',tracking_sheet:7.50,tracking_sheet_desc:'Tracking updated'},Christine:{tow_coord:5,tow_coord_desc:'Towing coordination',listing_res:12,listing_res_desc:'Listing issues resolved',avg_response:0,avg_response_desc:'Response time not met',resolution_rate:7.50,resolution_rate_desc:'Resolution rate',tow_invest:10,tow_invest_desc:'Investigations'},Hazel:{h_resolution:10,h_resolution_desc:'13.94% refund reduction (Apr $2,292.96 to May $1,973.13)',h_team_perf:5,h_team_perf_desc:'Team KPI rate: 71%',h_coaching_imp:15,h_coaching_imp_desc:'8 coaching sessions',h_process_imp:15,h_process_imp_desc:'Migrated Excel Facility DB to Airtable'},Joan:{a_report:5,a_report_desc:'Report submitted',a_coaching:7.50,a_coaching_desc:'Coaching done',a_weekly:5,a_weekly_desc:'Weekly tasks',a_inventory:5,a_inventory_desc:'Inventory mgmt',a_listing:7.50,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'},Lovely:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:10,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:10,a_facility_action_desc:'Audit actions',a_tow_assign:10,a_tow_assign_desc:'Towing assignment'},Jian:{a_daily_task:5,a_daily_task_desc:'Daily task monitoring',a_inventory:10,a_inventory_desc:'Inventory mgmt',a_listing:5,a_listing_desc:'Listing mgmt',a_facility_audit:5,a_facility_audit_desc:'Auditing',a_facility_action:5,a_facility_action_desc:'Audit actions',a_tow_assign:5,a_tow_assign_desc:'Towing assignment'}},deductions:[{description:'Customer ID 573094833 - Towed 4/14/2026, reimbursed 5/29/2026',amount:41.20,person:'Donita'}],coaching:{},topPerformer:{cc:'Michael',admin:'Lovely'},lowPerformer:{cc:'Angel',admin:'Jian'}}};
+
+async function init(){
+// Show loading overlay
+const overlay=document.createElement('div');
+overlay.id='loadingOverlay';
+overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#1B2A4A;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#D4A843;font-family:Arial,sans-serif;';
+overlay.innerHTML='<div style="font-size:24px;margin-bottom:16px;">Loading KPI Bonus Tool...</div><div style="font-size:14px;color:#8899AA;" id="loadStatus">Connecting to server...</div>';
+document.body.appendChild(overlay);
+loadData();
+const serverLoaded=await loadDataFromServer();
+if(serverLoaded){document.getElementById('loadStatus').textContent='Data loaded from server!';}
+else{document.getElementById('loadStatus').textContent='Using local data (server unavailable)';}
+// Always ensure seed data is present for April & May
+let seeded=false;
+for(const[month,monthData]of Object.entries(SEED_DATA)){
+if(!data[month]||!data[month].individual||Object.keys(data[month].individual).length===0){
+data[month]={
+cc_team:monthData.cc_team||{},
+admin_team:monthData.admin_team||{},
+individual:monthData.individual||{},
+deductions:monthData.deductions||[],
+coaching:monthData.coaching||{},
+topPerformer:monthData.topPerformer||{cc:'',admin:''},
+lowPerformer:monthData.lowPerformer||{cc:'',admin:''},
+ccTeamGrossOverride:monthData.ccTeamGrossOverride,
+ccTeamNetOverride:monthData.ccTeamNetOverride,
+ccMemberCount:monthData.ccMemberCount,
+adminTeamTotalOverride:monthData.adminTeamTotalOverride,
+adminMemberCount:monthData.adminMemberCount
+};
+seeded=true;
+}
+}
+// Save merged data back to server if server was reachable
+if(serverLoaded){saveData();}
+else if(seeded){localStorage.setItem('ysrkpi_data',JSON.stringify(data));}
+const sel=document.getElementById('monthSelect');
+MONTHS.forEach(m=>{const o=document.createElement('option');o.value=m.key;o.textContent=m.label;sel.appendChild(o);});
+sel.value=currentMonth;
+document.querySelectorAll('.nav-item').forEach(n=>{
+n.addEventListener('click',()=>{navigate(n.dataset.page);document.getElementById('sidebar').classList.remove('open');});
+});
+renderDashboard();
+overlay.remove();
+}
+init();
+</script>
+</body>
+</html>
