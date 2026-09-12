@@ -1367,7 +1367,7 @@ const flatDedPct=personDeds.length*25;
 const flatDedAmt=total*(Math.min(flatDedPct,100)/100);
 h+='<div style="margin-top:15px;background:rgba(231,76,60,0.08);border-left:3px solid var(--danger);padding:12px 15px;border-radius:0 6px 6px 0;">';
 if(useProgressive){
-h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(Progressive from Total Bonus: 1st=5%, 2nd-7th=10%, 8th+=15%)</span></h4>';
+h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Invalid Tow Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(Progressive from Max Cap: 1st=10%, 2nd-7th=15%, 8th+=20%)</span></h4>';
 }else{
 h+='<h4 style="color:var(--danger);margin:0 0 10px;"><i class="fas fa-exclamation-triangle"></i> Deductions <span style="font-size:12px;font-weight:400;color:var(--text-muted);">(each = 25% of individual total)</span></h4>';
 }
@@ -1377,9 +1377,9 @@ h+='<table style="margin:0 0 10px;"><thead><tr><th>Description</th><th style="wi
 personDeds.forEach((ded,idx)=>{
 const globalIdx=(d.deductions||[]).indexOf(ded);
 let tierLabel='';
-if(idx===0)tierLabel='1st case (5%)';
-else if(idx<=6)tierLabel='2nd case (10%)';
-else tierLabel='3rd case (15%)';
+if(idx===0)tierLabel='1st case (10%)';
+else if(idx<=6)tierLabel='2nd case (15%)';
+else tierLabel='3rd case (20%)';
 h+='<tr><td style="font-size:13px;">'+((ded.description||'').replace(/</g,'&lt;'))+'</td><td style="color:var(--danger);font-weight:600;font-size:12px;">'+tierLabel+'</td><td><button class="btn" style="padding:3px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeIndDed('+globalIdx+')"><i class="fas fa-trash"></i></button></td></tr>';
 });
 h+='</tbody></table>';
