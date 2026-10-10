@@ -137,7 +137,7 @@ th{background:#eee;color:#000;}
 const CC_MEMBERS=['Gwen','Donita','Michael','Angel','Christine'];
 const DEPARTED_MEMBERS={'Angel':'2026-09'};
 function isActiveMember(p,m){const d=DEPARTED_MEMBERS[p];return !d||m<d;}
-function getActiveCCMembers(m){return getActiveCCMembers(currentMonth).filter(p=>isActiveMember(p,m));}
+function getActiveCCMembers(m){return CC_MEMBERS.filter(p=>isActiveMember(p,m));}
 function getActiveAllMembers(m){return [...getActiveCCMembers(m),...DUAL_TEAM_MEMBERS,...ADMIN_MEMBERS];}
 function getActiveTLCCMembers(m){return ['Donita','Michael','Angel','Christine'].filter(p=>isActiveMember(p,m));}
 const ADMIN_MEMBERS=['Joan','Lovely','Jian'];
